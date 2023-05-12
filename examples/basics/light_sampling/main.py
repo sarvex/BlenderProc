@@ -30,7 +30,7 @@ bproc.camera.set_resolution(512, 512)
 
 # read the camera positions file and convert into homogeneous camera-world transformation
 with open(args.camera, "r") as f:
-    for line in f.readlines():
+    for line in f:
         line = [float(x) for x in line.split()]
         position, euler_rotation = line[:3], line[3:6]
         matrix_world = bproc.math.build_transformation_mat(position, euler_rotation)
@@ -39,13 +39,10 @@ with open(args.camera, "r") as f:
 # render the whole pipeline
 data = bproc.renderer.render()
 
-# Collect states of all objects
-object_states = []
-for obj in objs:
-    object_states.append({
-        "name": obj.get_name(),
-        "local2world": obj.get_local2world_mat()
-    })
+object_states = [
+    {"name": obj.get_name(), "local2world": obj.get_local2world_mat()}
+    for obj in objs
+]
 # Add states (they are the same for all frames here)
 data["object_states"] = [object_states] * bproc.utility.num_frames()
 
@@ -58,13 +55,13 @@ light_state = {
 # Add states (its the same for all frames here)
 data["light_states"] = [light_state] * bproc.utility.num_frames()
 
-# Collect state of the camera at all frames
-cam_states = []
-for frame in range(bproc.utility.num_frames()):
-    cam_states.append({
+cam_states = [
+    {
         "cam2world": bproc.camera.get_camera_pose(frame),
-        "cam_K": bproc.camera.get_intrinsics_as_K_matrix()
-    })
+        "cam_K": bproc.camera.get_intrinsics_as_K_matrix(),
+    }
+    for frame in range(bproc.utility.num_frames())
+]
 # Adds states to the data dict
 data["cam_states"] = cam_states
 

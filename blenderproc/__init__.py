@@ -1,5 +1,6 @@
 """A procedural Blender pipeline for photorealistic rendering."""
 
+
 import os
 import sys
 from .version import __version__
@@ -57,7 +58,7 @@ else:
     if "OUTSIDE_OF_THE_INTERNAL_BLENDER_PYTHON_ENVIRONMENT_BUT_IN_RUN_SCRIPT" not in os.environ \
             and not is_correct_startup_command:
         # pylint: disable=consider-using-f-string
-        raise RuntimeError("\n###############\nThis script can only be run by \"blenderproc run\", instead of calling:"
-                           "\n\tpython {}\ncall:\n\tblenderproc run {}\n###############".format(sys.argv[0],
-                                                                                                sys.argv[0]))
+        raise RuntimeError(
+            f'\n###############\nThis script can only be run by \"blenderproc run\", instead of calling:\n\tpython {sys.argv[0]}\ncall:\n\tblenderproc run {sys.argv[0]}\n###############'
+        )
         # pylint: enable=consider-using-f-string

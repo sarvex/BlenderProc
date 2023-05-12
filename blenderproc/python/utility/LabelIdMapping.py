@@ -50,9 +50,13 @@ class LabelIdMapping:
         :param id_value: The id of the pair
         """
         if self.has_id(id_value):
-            raise Exception("There already exists a label-id mapping for the id " + str(id_value))
+            raise Exception(
+                f"There already exists a label-id mapping for the id {id_value}"
+            )
         if self.has_label(label):
-            raise Exception("There already exists a label-id mapping for the label " + label)
+            raise Exception(
+                f"There already exists a label-id mapping for the label {label}"
+            )
 
         self._id_label_map[id_value] = label
         self._label_id_map[label] = id_value

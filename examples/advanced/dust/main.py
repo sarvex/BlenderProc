@@ -23,7 +23,7 @@ light.set_location([5, -5, 5])
 light.set_energy(1000)
 
 # Sample five camera poses
-for i in range(5):
+for _ in range(5):
     # Sample random camera location above objects
     location = bproc.sampler.part_sphere(center=np.array([0, 0, 0]), mode="SURFACE", radius=3, part_sphere_dir_vector=np.array([1, 0, 0]), dist_above_center=0.5)
     # Compute rotation based on vector going from location towards poi

@@ -96,8 +96,7 @@ def draw(self, context):
                     unlink="text.unlink", open="text.open")
 
     if context_text:
-        is_osl = context_text.name.endswith((".osl", ".osl"))
-        if is_osl:
+        if is_osl := context_text.name.endswith((".osl", ".osl")):
             row.operator("node.shader_script_update",
                          text="", icon='FILE_REFRESH')
         else:

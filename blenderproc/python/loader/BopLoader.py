@@ -63,7 +63,7 @@ def load_bop_objs(bop_dataset_path: str, model_type: str = "", obj_ids: Optional
         while loaded_amount != num_of_objs_to_sample:
             random_id = choice(obj_ids)
             if random_id not in loaded_ids:
-                loaded_ids.update({random_id: 0})
+                loaded_ids[random_id] = 0
             # if there is no limit or if there is one, but it is not reached for this particular object
             if obj_instances_limit == -1 or loaded_ids[random_id] < obj_instances_limit:
                 cur_obj = _BopLoader.load_mesh(random_id, model_p, bop_dataset_name, scale)
@@ -311,10 +311,15 @@ class _BopLoader:
         :param model_path: Model path of the new object.
         :return: Object if found, else return None.
         """
-        for loaded_obj in bpy.context.scene.objects:
-            if 'model_path' in loaded_obj and loaded_obj['model_path'] == model_path:
-                return loaded_obj
-        return None
+        return next(
+            (
+                loaded_obj
+                for loaded_obj in bpy.context.scene.objects
+                if 'model_path' in loaded_obj
+                and loaded_obj['model_path'] == model_path
+            ),
+            None,
+        )
 
     @staticmethod
     def load_mesh(obj_id: int, model_p: dict, bop_dataset_name: str, scale: float = 1) -> MeshObject:
@@ -344,7 +349,9 @@ class _BopLoader:
                 cur_obj.set_material(i, material_dup)
 
         # Change Material name to be backward compatible
-        cur_obj.get_materials()[-1].set_name("bop_" + bop_dataset_name + "_vertex_col_material")
+        cur_obj.get_materials()[-1].set_name(
+            f"bop_{bop_dataset_name}_vertex_col_material"
+        )
         cur_obj.set_scale(Vector((scale, scale, scale)))
         cur_obj.set_cp("category_id", obj_id)
         cur_obj.set_cp("model_path", model_path)

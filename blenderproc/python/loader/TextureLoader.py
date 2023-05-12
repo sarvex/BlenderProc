@@ -29,9 +29,7 @@ def load_texture(path: str, colorspace: str = "sRGB") -> List[bpy.types.Texture]
     """
     path = resolve_path(path)
     image_paths = _TextureLoader.resolve_paths(path)
-    textures = _TextureLoader.load_and_create(image_paths, colorspace)
-
-    return textures
+    return _TextureLoader.load_and_create(image_paths, colorspace)
 
 
 class _TextureLoader:
@@ -44,14 +42,13 @@ class _TextureLoader:
         :return: List of absolute paths to assets. Type: list.
         """
         image_paths = []
-        if os.path.exists(path):
-            if os.path.isdir(path):
-                image_paths = glob.glob(os.path.join(path, "*"))
-            else:
-                image_paths.append(path)
-        else:
+        if not os.path.exists(path):
             raise RuntimeError(f"Invalid path: {path}")
 
+        if os.path.isdir(path):
+            image_paths = glob.glob(os.path.join(path, "*"))
+        else:
+            image_paths.append(path)
         return image_paths
 
     @staticmethod

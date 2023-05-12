@@ -23,9 +23,11 @@ def _default_light_pose_sampling(frustum_vertices: np.ndarray) -> np.ndarray:
     """
     middle_frustum_point = np.mean(frustum_vertices, axis=0)
     cube_diag = np.linalg.norm(np.max(frustum_vertices, axis=0) - np.min(frustum_vertices, axis=0)) * 0.5
-    sampled_light_pose = part_sphere(middle_frustum_point,
-                                     radius=np.random.uniform(cube_diag * 0.01, cube_diag * 0.75), mode="SURFACE")
-    return sampled_light_pose
+    return part_sphere(
+        middle_frustum_point,
+        radius=np.random.uniform(cube_diag * 0.01, cube_diag * 0.75),
+        mode="SURFACE",
+    )
 
 
 def _default_look_at_pose_sampling(frustum_vertices: np.ndarray, _sampled_light_pose: np.ndarray) -> np.ndarray:

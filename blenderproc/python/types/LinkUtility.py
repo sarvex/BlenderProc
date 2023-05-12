@@ -85,7 +85,7 @@ class Link(Entity):
                      constraints. For relative we don't - this will result in inverse motion after the constraint's
                      limits have been reached.
         """
-        assert mode in ["absolute", "relative"]
+        assert mode in {"absolute", "relative"}
 
         bpy.ops.object.select_all(action='DESELECT')
 
@@ -101,14 +101,12 @@ class Link(Entity):
                 current_rotation_euler = bone.rotation_euler
                 current_rotation_euler[["X", "Y", "Z"].index(axis)] = rotation_euler
                 bone.rotation_euler = current_rotation_euler
-                print(f"Set rotation_euler of bone {bone.name} to {rotation_euler}")
             else:
                 bone.rotation_euler = Vector(
                     [self._clip_value_from_constraint(bone=bone, value=rot_euler, constraint_name="Limit Rotation",
                                                       axis=axis)
                      for rot_euler, axis in zip(rotation_euler, ["X", "Y", "Z"])])
-                print(f"Set rotation_euler of bone {bone.name} to {rotation_euler}")
-        # in relative mode we add the rotation to the current value
+            print(f"Set rotation_euler of bone {bone.name} to {rotation_euler}")
         elif mode == "relative":
             if isinstance(rotation_euler, float):
                 axis = self._determine_rotation_axis(bone=bone)
@@ -485,13 +483,13 @@ class Link(Entity):
 
         # we need two bones: a controll bone and a constraint bone
         # the controll bone will be placed exactly where the current ik bone is
-        ik_bone_controller = edit_bones.new(self.ik_bone.name + '.controller')
+        ik_bone_controller = edit_bones.new(f'{self.ik_bone.name}.controller')
         ik_bone_controller.head = self.ik_bone.head + Vector(relative_location)
         ik_bone_controller.tail = self.ik_bone.tail + Vector(relative_location)
         ik_bone_controller.parent = edit_bones[self.bone.name].parent_recursive[-1]
 
         # the constraint bone will be placed at the head of the ik bone
-        ik_bone_constraint = edit_bones.new(self.ik_bone.name + '.constraint')
+        ik_bone_constraint = edit_bones.new(f'{self.ik_bone.name}.constraint')
         ik_bone_constraint.tail = self.ik_bone.head + Vector(relative_location)
         ik_bone_constraint.head = ik_bone_constraint.tail - (self.ik_bone.tail - self.ik_bone.head)
         # we need to re-parent the pre- and successor of the constraint bone
@@ -500,8 +498,12 @@ class Link(Entity):
 
         # add the bones to the link
         bpy.ops.object.mode_set(mode='POSE')
-        self.set_ik_bone_constraint(self.armature.pose.bones.get(self.ik_bone.name + '.constraint'))
-        self.set_ik_bone_controller(self.armature.pose.bones.get(self.ik_bone.name + '.controller'))
+        self.set_ik_bone_constraint(
+            self.armature.pose.bones.get(f'{self.ik_bone.name}.constraint')
+        )
+        self.set_ik_bone_controller(
+            self.armature.pose.bones.get(f'{self.ik_bone.name}.controller')
+        )
 
         # add ik constraint
         set_ik_constraint(self.ik_bone_constraint, self.armature, self.ik_bone_controller.name,
@@ -536,7 +538,7 @@ class Link(Entity):
         """
         if self.bone is None:
             return None
-        assert mode in ["fk", "ik"]
+        assert mode in {"fk", "ik"}
         if mode == "fk":  # turn off copy rotation constraints of fk bone and base bone
             if self.get_fk_ik_mode() == "fk":
                 return None

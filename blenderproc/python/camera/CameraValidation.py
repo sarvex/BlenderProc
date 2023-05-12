@@ -51,8 +51,10 @@ def perform_obstacle_in_view_check(cam2world_matrix: Union[Matrix, np.ndarray], 
     range_distance = sys.float_info.max
 
     # Input validation
-    for operator in proximity_checks:
-        if operator in ["min", "max"] and not isinstance(proximity_checks[operator], numbers.Number):
+    for operator, value in proximity_checks.items():
+        if operator in ["min", "max"] and not isinstance(
+            value, numbers.Number
+        ):
             raise RuntimeError("Threshold must be a number in perform_obstacle_in_view_check")
         if operator in ["avg", "var"]:
             if "min" not in proximity_checks[operator] or "max" not in proximity_checks[operator]:
@@ -70,11 +72,10 @@ def perform_obstacle_in_view_check(cam2world_matrix: Union[Matrix, np.ndarray], 
         else:
             range_distance = proximity_checks["min"]
 
-    no_range_distance = False
-    if "no_background" in proximity_checks and proximity_checks["no_background"]:
-        # when no background is on, it can not be combined with a reduced range distance
-        no_range_distance = True
-
+    no_range_distance = bool(
+        "no_background" in proximity_checks
+        and proximity_checks["no_background"]
+    )
     # Go in discrete grid-like steps over plane
     position = cam2world_matrix.to_translation()
     for x in range(0, sqrt_number_of_rays):
@@ -96,24 +97,24 @@ def perform_obstacle_in_view_check(cam2world_matrix: Union[Matrix, np.ndarray], 
                 if "avg" in proximity_checks:
                     sum_value += dist
                 if "var" in proximity_checks:
-                    if not "avg" in proximity_checks:
+                    if "avg" not in proximity_checks:
                         sum_value += dist
                     sum_sq += dist * dist
             elif "no_background" in proximity_checks and proximity_checks["no_background"]:
                 return False
 
     if "avg" in proximity_checks:
-        avg = sum_value / (sqrt_number_of_rays * sqrt_number_of_rays)
+        avg = sum_value / sqrt_number_of_rays**2
         # Check that the average distance is not within the accepted interval
         if avg >= proximity_checks["avg"]["max"] or avg <= proximity_checks["avg"]["min"]:
             return False
 
     if "var" in proximity_checks:
-        if not "avg" in proximity_checks:
-            avg = sum_value / (sqrt_number_of_rays * sqrt_number_of_rays)
+        if "avg" not in proximity_checks:
+            avg = sum_value / sqrt_number_of_rays**2
         sq_avg = avg * avg
 
-        avg_sq = sum_sq / (sqrt_number_of_rays * sqrt_number_of_rays)
+        avg_sq = sum_sq / sqrt_number_of_rays**2
 
         var = avg_sq - sq_avg
         # Check that the variance value of the distance is not within the accepted interval
@@ -190,7 +191,7 @@ def scene_coverage_score(cam2world_matrix: Union[Matrix, np.ndarray], special_ob
     cam_ob = bpy.context.scene.camera
     cam = cam_ob.data
 
-    num_of_rays = sqrt_number_of_rays * sqrt_number_of_rays
+    num_of_rays = sqrt_number_of_rays**2
     score = 0.0
     objects_hit: defaultdict = defaultdict(int)
 
@@ -223,18 +224,12 @@ def scene_coverage_score(cam2world_matrix: Union[Matrix, np.ndarray], special_ob
                     if "coarse_grained_class" in hit_object:
                         object_class = hit_object["coarse_grained_class"]
                         objects_hit[object_class] += 1
-                        if object_class in special_objects:
-                            score += special_objects_weight
-                        else:
-                            score += 1
+                        score += special_objects_weight if object_class in special_objects else 1
                     else:
                         score += 1
                 elif "category_id" in hit_object:
                     object_class = hit_object["category_id"]
-                    if object_class in special_objects:
-                        score += special_objects_weight
-                    else:
-                        score += 1
+                    score += special_objects_weight if object_class in special_objects else 1
                     objects_hit[object_class] += 1
                 else:
                     objects_hit[hit_object] += 1
@@ -296,7 +291,7 @@ def check_novel_pose(cam2world_matrix: Union[Matrix, np.ndarray], existing_poses
 
         return True
 
-    if len(existing_poses) > 0:  # First pose is always novel
+    if existing_poses:  # First pose is always novel
         cam2world_matrix = Matrix(cam2world_matrix)
         if check_pose_novelty_rot:
             rotations = [Matrix(pose).to_euler() for pose in existing_poses]

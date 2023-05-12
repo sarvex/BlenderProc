@@ -65,7 +65,7 @@ class RockEssentialsRockLoader:
                               directory=os.path.join(path, "Object"))
             loaded_obj = MeshObject(bpy.context.scene.objects[obj])
             # set custom name for easier tracking in the scene
-            loaded_obj.set_name(obj + "_" + str(subsec_num) + "_" + str(i))
+            loaded_obj.set_name(f"{obj}_{subsec_num}_{str(i)}")
             # append to return list
             loaded_objects.append(loaded_obj)
 
@@ -105,7 +105,7 @@ class RockEssentialsRockLoader:
             if obj.has_cp("01) High Detail Mode"):
                 obj.set_cp("01) High Detail Mode", high_detail_mode)
             else:
-                print("High Detail Mode is unavailable for " + str(obj.get_name()) + ", omitting.")
+                print(f"High Detail Mode is unavailable for {str(obj.get_name())}, omitting.")
             if reflection_amount is not None:
                 obj.set_cp("05) Reflection Amount", reflection_amount)
             if reflection_roughness is not None:

@@ -266,9 +266,8 @@ def apply_lens_distortion(image: Union[List[np.ndarray], np.ndarray],
         if used_dtpye == np.uint8:
             image_distorted = np.clip(image_distorted, 0, 255)
         data = image_distorted.astype(used_dtpye)
-        if len(input_image.shape) == 2:
-            return data[:, :, 0]
-        return data
+        return data[:, :, 0] if len(input_image.shape) == 2 else data
+
     if isinstance(image, list):
         return [_internal_apply(img) for img in image]
     if isinstance(image, np.ndarray):
@@ -303,7 +302,7 @@ def set_camera_parameters_from_config_file(camera_intrinsics_file_path: str, rea
 
     with open(camera_intrinsics_file_path, "r", encoding="utf-8") as file:
         final_lines = []
-        for line in file.readlines():
+        for line in file:
             line = line.strip()
             if "#" in line:
                 line = line[:line.find("#")].strip()
@@ -338,10 +337,11 @@ def set_camera_parameters_from_config_file(camera_intrinsics_file_path: str, rea
                     # remove lines which are not specified to a certain camera
                     line = ""
             line = line.replace(f"camera.{camera_index}.", "")
-            if line.count("=") == 1:
-                line = f'"{line.split("=")[0]}"= {line.split("=")[1]}'
-            else:
-                line = ""
+            line = (
+                f'"{line.split("=")[0]}"= {line.split("=")[1]}'
+                if line.count("=") == 1
+                else ""
+            )
             line = line.replace("=", ":")
             if line:
                 final_lines.append(line)

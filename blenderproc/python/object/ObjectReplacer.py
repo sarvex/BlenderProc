@@ -38,11 +38,11 @@ def replace_objects(objects_to_be_replaced: List[MeshObject], objects_to_replace
     for obj in objects_to_replace_with:
         obj.hide()
 
-    check_collision_with = []
-    for obj in get_all_mesh_objects():
-        if obj not in ignore_collision_with:
-            check_collision_with.append(obj)
-
+    check_collision_with = [
+        obj
+        for obj in get_all_mesh_objects()
+        if obj not in ignore_collision_with
+    ]
     # amount of replacements depends on the amount of objects and the replace ratio
     objects_to_be_replaced = random.sample(objects_to_be_replaced, k=int(len(objects_to_be_replaced) * replace_ratio))
     if len(objects_to_be_replaced) == 0:
@@ -77,7 +77,7 @@ def replace_objects(objects_to_be_replaced: List[MeshObject], objects_to_replace
             tries += 1
 
         if tries == max_tries:
-            print("Could not replace " + current_object_to_be_replaced.get_name())
+            print(f"Could not replace {current_object_to_be_replaced.get_name()}")
 
 
 class _ObjectReplacer:

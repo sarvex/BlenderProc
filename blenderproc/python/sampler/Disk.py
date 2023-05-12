@@ -56,9 +56,9 @@ def disk(center: Union[Vector, np.ndarray, List[float]], radius: float,
 
     # check if the mode/sampling structure is supported
     if sample_from not in ["disk", "circle", "sector", "arc"]:
-        raise Exception("Unknown mode of operation: " + sample_from)
+        raise Exception(f"Unknown mode of operation: {sample_from}")
     # if mode is sampling from sector or arc
-    if sample_from in ["arc", "sector"]:
+    if sample_from in {"arc", "sector"}:
         # check if start and end angles comply to boundaries
         if not all([start_angle < end_angle, abs(start_angle - end_angle) <= 180]):
             raise Exception("Sector's/arch's start and end points are defined wrong! Boundaries to comply with:"
@@ -68,26 +68,23 @@ def disk(center: Union[Vector, np.ndarray, List[float]], radius: float,
         end_vec = [np.cos(np.deg2rad(end_angle)), np.sin(np.deg2rad(end_angle))]
 
     # if sampling from the circle or arc set magnitude to radius, if not - to the scaled radius
-    if sample_from.lower() in ["circle", "arc"]:
+    if sample_from.lower() in {"circle", "arc"}:
         magnitude = radius
-    elif sample_from.lower() in ["disk", "sector"]:
+    elif sample_from.lower() in {"disk", "sector"}:
         magnitude = radius * np.sqrt(np.random.uniform())
     else:
-        raise Exception("Unknown mode of operation: " + sample_from)
+        raise Exception(f"Unknown mode of operation: {sample_from}")
 
     sampled_point = _Disk.sample_point(magnitude)
 
     # sample a point until it falls into the defined sector/arc
-    if sample_from in ["arc", "sector"]:
+    if sample_from in {"arc", "sector"}:
         while not all([not _Disk.is_clockwise(start_vec, sampled_point), _Disk.is_clockwise(end_vec, sampled_point)]):
             sampled_point = _Disk.sample_point(magnitude)
 
     # get rotation
     rot_mat = mathutils.Euler(rotation, 'XYZ').to_matrix()
-    # apply rotation and add center
-    location = np.array(rot_mat) @ sampled_point + np.array(center)
-
-    return location
+    return np.array(rot_mat) @ sampled_point + np.array(center)
 
 
 class _Disk:
@@ -103,9 +100,7 @@ class _Disk:
         if np.count_nonzero(direction) == 0:
             direction[0] = 1e-5
         norm = np.sqrt(direction.dot(direction))
-        sampled_point = np.append(list(map(lambda x: magnitude * x / norm, direction)), 0)
-
-        return sampled_point
+        return np.append(list(map(lambda x: magnitude * x / norm, direction)), 0)
 
     @staticmethod
     def is_clockwise(rel_point: Union[Vector, np.ndarray, List[float]],

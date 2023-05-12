@@ -74,14 +74,13 @@ img_gene = np.asarray(Image.fromarray(data['colors'][0]).convert('L'))
 img_real = np.asarray(Image.open(real_path).convert('RGB').convert('L'))
 assert img_gene.shape == img_real.shape
 result = match_template(img_gene, img_real[3:-3, 3:-3], pad_input=False)
-if result.argmax() == 24:  # center of the (7,7) correlation window
-    print(f"The generated image is not biased w.r.t. the reference real image.")
-    if result.max() > norm_corr_limit:
-        print(f"The norm. correlation index between generated and real images is {np.round(result.max(), 3)}, "
-              f"which is fine.")
-    else:
-        raise Exception("The norm. correlation index between generated and real image is too low. The images do "
-                        "not match. Choose other object or config file.")
-else:
+if result.argmax() != 24:
     raise Exception("The generated calibration pattern image and the reference real image do not match. Choose other "
         f"object or config file: {result.argmax()}.")
+print("The generated image is not biased w.r.t. the reference real image.")
+if result.max() > norm_corr_limit:
+    print(f"The norm. correlation index between generated and real images is {np.round(result.max(), 3)}, "
+          f"which is fine.")
+else:
+    raise Exception("The norm. correlation index between generated and real image is too low. The images do "
+                    "not match. Choose other object or config file.")

@@ -41,10 +41,10 @@ tries = 0
 
 
 def check_name(name):
-    for category_name in ["chair", "sofa", "table", "bed"]:
-        if category_name in name.lower():
-            return True
-    return False
+    return any(
+        category_name in name.lower()
+        for category_name in ["chair", "sofa", "table", "bed"]
+    )
 
 
 # filter some objects from the loaded objects, which are later used in calculating an interesting score

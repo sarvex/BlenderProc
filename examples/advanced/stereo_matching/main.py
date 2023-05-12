@@ -27,7 +27,7 @@ bproc.camera.set_stereo_parameters(interocular_distance=0.05, convergence_mode="
 
 # read the camera positions file and convert into homogeneous camera-world transformation
 with open(args.camera, "r") as f:
-    for line in f.readlines():
+    for line in f:
         line = [float(x) for x in line.split()]
         position = bproc.math.change_coordinate_frame_of_point(line[:3], ["X", "-Z", "Y"])
         rotation = bproc.math.change_coordinate_frame_of_point(line[3:6], ["X", "-Z", "Y"])

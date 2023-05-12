@@ -147,12 +147,11 @@ class BasicMeshInitializer(Module):
         elif obj_type == "torus":
             bpy.ops.mesh.primitive_torus_add()
         else:
-            raise RuntimeError('Unknown basic mesh type "{}"! Available types: "plane", "cube", "circle", "uvsphere", '
-                               '"icosphere", "cylinder", "cone", "torus".'.format(type))
+            raise RuntimeError(
+                f'Unknown basic mesh type "{type}"! Available types: "plane", "cube", "circle", "uvsphere", "icosphere", "cylinder", "cone", "torus".'
+            )
 
-        new_obj = bpy.context.object
-
-        return new_obj
+        return bpy.context.object
 
     def _set_attrs(self, new_obj, obj_name, obj_location, obj_rotation, obj_scale):
         """ Sets the attribute values of the added object.
@@ -173,6 +172,6 @@ class BasicMeshInitializer(Module):
 
         :param obj_name: Name of the object. Type: string.
         """
-        mat_obj = bpy.data.materials.new(name=obj_name+"_material")
+        mat_obj = bpy.data.materials.new(name=f"{obj_name}_material")
         mat_obj.use_nodes = True
         bpy.context.object.data.materials.append(mat_obj)

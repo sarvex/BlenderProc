@@ -205,35 +205,39 @@ class Material(Provider):
                     # check if the type of the value of attribute matches desired
                     if isinstance(getattr(material, key), type(value)):
                         new_value = value
-                    # if not, try to enforce some mathutils-specific type
+                    elif isinstance(getattr(material, key), mathutils.Vector):
+                        new_value = mathutils.Vector(value)
+                    elif isinstance(getattr(material, key), mathutils.Euler):
+                        new_value = mathutils.Euler(value)
+                    elif isinstance(getattr(material, key), mathutils.Color):
+                        new_value = mathutils.Color(value)
                     else:
-                        if isinstance(getattr(material, key), mathutils.Vector):
-                            new_value = mathutils.Vector(value)
-                        elif isinstance(getattr(material, key), mathutils.Euler):
-                            new_value = mathutils.Euler(value)
-                        elif isinstance(getattr(material, key), mathutils.Color):
-                            new_value = mathutils.Color(value)
-                        # raise an exception if it is none of them
-                        else:
-                            raise Exception("Types are not matching: %s and %s !"
-                                            % (type(getattr(material, key)), type(value)))
+                        raise Exception(
+                            f"Types are not matching: {type(getattr(material, key))} and {type(value)} !"
+                        )
                     # or check for equality
-                    if not ((isinstance(getattr(material, key), str) and re.fullmatch(value, getattr(material, key)) is not None)
-                            or getattr(material, key) == new_value):
+                    if (
+                        not isinstance(getattr(material, key), str)
+                        or re.fullmatch(value, getattr(material, key)) is None
+                    ) and getattr(material, key) != new_value:
                         select_material = False
                         break
-                # check if a custom property with this name exists
                 elif key in material and requested_custom_property:
-                    # check if the type of the value of such custom property matches desired
-                    if isinstance(material[key], type(value)) or (isinstance(material[key], int) and isinstance(value, bool)):
-                        # if it is a string and if the whole string matches the given pattern
-                        if not ((isinstance(material[key], str) and re.fullmatch(value, material[key]) is not None) or
-                                material[key] == value):
-                            select_material = False
-                            break
-                    else:
+                    if not isinstance(material[key], type(value)) and (
+                        not isinstance(material[key], int)
+                        or not isinstance(value, bool)
+                    ):
                         # raise an exception if not
-                        raise Exception("Types are not matching: {} and {} !".format(type(material[key]), type(value)))
+                        raise Exception(
+                            f"Types are not matching: {type(material[key])} and {type(value)} !"
+                        )
+                        # if it is a string and if the whole string matches the given pattern
+                    if (
+                        not isinstance(material[key], str)
+                        or re.fullmatch(value, material[key]) is None
+                    ) and material[key] != value:
+                        select_material = False
+                        break
                 elif requested_custom_function:
                     if key.startswith("texture_amount_"):
                         if material.use_nodes:
@@ -241,20 +245,25 @@ class Material(Provider):
                             nodes = material.node_tree.nodes
                             texture_nodes = Utility.get_nodes_with_type(nodes, "TexImage")
                             amount_of_texture_nodes = len(texture_nodes) if texture_nodes is not None else 0
-                            if "min" in key:
-                                if not (amount_of_texture_nodes >= value):
-                                    select_material = False
-                                    break
-                            elif "max" in key:
-                                if not (amount_of_texture_nodes <= value):
-                                    select_material = False
-                                    break
-                            elif "eq" in key:
-                                if not (amount_of_texture_nodes == value):
-                                    select_material = False
-                                    break
-                            else:
-                                raise Exception("This type of key is unknown: {}".format(key))
+                            if (
+                                "min" in key
+                                and amount_of_texture_nodes < value
+                                or "min" not in key
+                                and "max" in key
+                                and amount_of_texture_nodes > value
+                                or "min" not in key
+                                and "max" not in key
+                                and "eq" in key
+                                and amount_of_texture_nodes != value
+                            ):
+                                select_material = False
+                                break
+                            elif (
+                                "min" not in key
+                                and "max" not in key
+                                and "eq" not in key
+                            ):
+                                raise Exception(f"This type of key is unknown: {key}")
                         else:
                             select_material = False
                             break
@@ -264,20 +273,25 @@ class Material(Provider):
                             nodes = material.node_tree.nodes
                             principled = Utility.get_nodes_with_type(nodes, "BsdfPrincipled")
                             amount_of_principled_bsdf_nodes = len(principled) if principled is not None else 0
-                            if "min" in key:
-                                if not (amount_of_principled_bsdf_nodes >= value):
-                                    select_material = False
-                                    break
-                            elif "max" in key:
-                                if not (amount_of_principled_bsdf_nodes <= value):
-                                    select_material = False
-                                    break
-                            elif "eq" in key:
-                                if not (amount_of_principled_bsdf_nodes == value):
-                                    select_material = False
-                                    break
-                            else:
-                                raise Exception("This type of key is unknown: {}".format(key))
+                            if (
+                                "min" in key
+                                and amount_of_principled_bsdf_nodes < value
+                                or "min" not in key
+                                and "max" in key
+                                and amount_of_principled_bsdf_nodes > value
+                                or "min" not in key
+                                and "max" not in key
+                                and "eq" in key
+                                and amount_of_principled_bsdf_nodes != value
+                            ):
+                                select_material = False
+                                break
+                            elif (
+                                "min" not in key
+                                and "max" not in key
+                                and "eq" not in key
+                            ):
+                                raise Exception(f"This type of key is unknown: {key}")
                         else:
                             select_material = False
                             break
@@ -299,8 +313,9 @@ class Material(Provider):
                             extracted_input_name = key[len("principled_bsdf_"):key.rfind("_")]
                             # check if this key exists, else throw an error
                             if extracted_input_name not in principled.inputs:
-                                raise Exception("Only valid inputs of a principled node are allowed: "
-                                                "{} in: {}".format(extracted_input_name, key))
+                                raise Exception(
+                                    f"Only valid inputs of a principled node are allowed: {extracted_input_name} in: {key}"
+                                )
                             # extract this input value
                             used_value = principled.inputs[extracted_input_name]
                             # if this input value is not a default value it will be connected via the links
@@ -311,19 +326,19 @@ class Material(Provider):
                             used_value = used_value.default_value
                             # compare the given value to the default value
                             if key.endswith("min"):
-                                if not (used_value >= value):
+                                if used_value < value:
                                     select_material = False
                                     break
                             elif key.endswith("max"):
-                                if not (used_value <= value):
+                                if used_value > value:
                                     select_material = False
                                     break
                             elif key.endswith("eq"):
-                                if not (used_value == value):
+                                if used_value != value:
                                     select_material = False
                                     break
                             else:
-                                raise Exception("This type of key is unknown: {}".format(key))
+                                raise Exception(f"This type of key is unknown: {key}")
                         else:
                             select_material = False
                             break
@@ -388,7 +403,7 @@ class Material(Provider):
             materials = [materials[self.config.get_int("index")]]
         elif random_samples and not has_index:
             materials = sample(materials, k=min(random_samples, len(materials)))
-        elif has_index and random_samples:
+        elif has_index:
             raise RuntimeError("Please, define only one of two: `index` or `random_samples`.")
 
         check_if_return_is_empty = self.config.get_bool("check_empty", False)

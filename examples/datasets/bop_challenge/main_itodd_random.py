@@ -58,8 +58,7 @@ def sample_pose_func(obj: bproc.types.MeshObject):
 bproc.renderer.enable_depth_output(activate_antialiasing=False)
 bproc.renderer.set_max_amount_of_samples(50)
 
-for i in range(args.num_scenes):
-
+for _ in range(args.num_scenes):
     # Sample bop objects for a scene
     sampled_target_bop_objs = list(np.random.choice(target_bop_objs, size=25, replace=False))
     sampled_distractor_bop_objs = list(np.random.choice(tless_dist_bop_objs, size=5, replace=False))
@@ -76,13 +75,13 @@ for i in range(args.num_scenes):
             mat.set_principled_shader_value("Metallic", np.random.uniform(0, 1.0))
         if obj.get_cp("bop_dataset_name") == 'tless':
             mat.set_principled_shader_value("Metallic", np.random.uniform(0, 0.5))
-            
+
         obj.enable_rigidbody(True, mass=1.0, friction = 100.0, linear_damping = 0.99, angular_damping = 0.99, collision_margin=0.0005)
         obj.hide(False)
-    
+
     # Sample two light sources
     light_plane_material.make_emissive(emission_strength=np.random.uniform(0.1,0.5), 
-                                    emission_color=np.random.uniform([0.5, 0.5, 0.5, 1.0], [1.0, 1.0, 1.0, 1.0]))  
+                                    emission_color=np.random.uniform([0.5, 0.5, 0.5, 1.0], [1.0, 1.0, 1.0, 1.0]))
     light_plane.replace_materials(light_plane_material)
     light_point.set_color(np.random.uniform([0.5,0.5,0.5],[1,1,1]))
     location = bproc.sampler.shell(center = [0, 0, 0], radius_min = 0.5, radius_max = 1.5,
@@ -99,7 +98,7 @@ for i in range(args.num_scenes):
     bproc.object.sample_poses(objects_to_sample = sampled_target_bop_objs + sampled_distractor_bop_objs,
                             sample_pose_func = sample_pose_func, 
                             max_tries = 1000)
-            
+
     # Physics Positioning
     bproc.object.simulate_physics_and_fix_final_poses(min_simulation_time=3,
                                                       max_simulation_time=10,
@@ -124,7 +123,7 @@ for i in range(args.num_scenes):
         rotation_matrix = bproc.camera.rotation_from_forward_vec(poi - location, inplane_rot=np.random.uniform(-3.14159, 3.14159))
         # Add homog cam pose based on location an rotation
         cam2world_matrix = bproc.math.build_transformation_mat(location, rotation_matrix)
-        
+
         # Check that obstacles are at least 0.3 meter away from the camera and make sure the view interesting enough
         if bproc.camera.perform_obstacle_in_view_check(cam2world_matrix, {"min": 0.3}, bop_bvh_tree):
             # Persist camera pose
@@ -143,7 +142,7 @@ for i in range(args.num_scenes):
                            colors = data["colors"], 
                            color_file_format = "JPEG",
                            ignore_dist_thres = 10)
-    
+
     for obj in (sampled_target_bop_objs + sampled_distractor_bop_objs):      
         obj.disable_rigidbody()
         obj.hide(True)

@@ -19,9 +19,13 @@ def generate_classlist(app, fromdocname, subtree, class_list, prefix, level=2):
         ref = nodes.reference('', '')
         ref['refdocname'] = e[3]
         ref['refuri'] = app.builder.get_relative_uri(fromdocname, e[3])
-        ref['refuri'] += '#' + e[4]
+        ref['refuri'] += f'#{e[4]}'
         ref.append(nodes.Text(prefix + e[0].split(".")[-1]))
-        class_item = nodes.list_item('', addnodes.compact_paragraph('', '', ref), classes=["toctree-l" + str(level)])
+        class_item = nodes.list_item(
+            '',
+            addnodes.compact_paragraph('', '', ref),
+            classes=[f"toctree-l{str(level)}"],
+        )
         #print(fromdocname, e[3])
         if fromdocname.startswith(e[3].replace(".api.", ".")):
             #print("current")
@@ -77,10 +81,12 @@ def generate_tutorials_sidebar(app, fromdocname, container):
         toc = nodes.bullet_list()
 
         ref = nodes.reference('', '')
-        ref['refuri'] = app.builder.get_relative_uri(fromdocname, "docs/tutorials/" + tutorial[1])
+        ref['refuri'] = app.builder.get_relative_uri(
+            fromdocname, f"docs/tutorials/{tutorial[1]}"
+        )
         ref.append(nodes.Text(tutorial[0]))
         module_item = nodes.list_item('', addnodes.compact_paragraph('', '', ref), classes=["toctree-l1"])
-        if fromdocname.startswith("docs/tutorials/" + tutorial[1]):
+        if fromdocname.startswith(f"docs/tutorials/{tutorial[1]}"):
             module_item["classes"].append('current')
         toc += module_item
         container += toc
@@ -94,10 +100,12 @@ def generate_examples_sidebar(app, fromdocname, container):
             toc = nodes.bullet_list()
 
             ref = nodes.reference('', '')
-            ref['refuri'] = app.builder.get_relative_uri(fromdocname, "examples/" + example_groups.name + "/README")
+            ref['refuri'] = app.builder.get_relative_uri(
+                fromdocname, f"examples/{example_groups.name}/README"
+            )
             ref.append(nodes.Text(example_groups.name.capitalize()))
             module_item = nodes.list_item('', addnodes.compact_paragraph('', '', ref), classes=["toctree-l1"])
-            if fromdocname.startswith("examples/" + example_groups.name):
+            if fromdocname.startswith(f"examples/{example_groups.name}"):
                 module_item["classes"].append('current')
             toc += module_item
 

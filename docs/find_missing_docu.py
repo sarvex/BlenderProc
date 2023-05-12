@@ -47,8 +47,7 @@ def get_config_element_from_line(line, line_nr):
         sep = "'"
     else:
         return None
-    key_word = key_word.replace(sep, "")
-    if key_word:
+    if key_word := key_word.replace(sep, ""):
         return ConfigElement(key_word, ele_type, line, line_nr, default_val)
     else:
         return None
@@ -58,8 +57,7 @@ def get_config_value_from_csv_line(line, line_nr):
         return None
     line = line.strip()
     key_word = line[line.find("\"") + 1:]
-    key_word = key_word[:key_word.find("\"")].strip()
-    if key_word:
+    if key_word := key_word[: key_word.find("\"")].strip():
         return ConfigElement(key_word, None, line, line_nr, None)
     else:
         return None
@@ -76,73 +74,68 @@ class ConfigElement(object):
 
     def __repr__(self):
         if self.default_value:
-            return str("{}({}): {}".format(self.key_word, self.ele_type, self.default_value))
+            return f"{self.key_word}({self.ele_type}): {self.default_value}"
         else:
-            return str("{}({})".format(self.key_word, self.ele_type))
+            return f"{self.key_word}({self.ele_type})"
 
     def set_type(self, line):
-        if "Type:" in line:
-            ele_type = line[line.find("Type:") + len("Type:"):]
-            ele_type = ele_type.strip()
-            if "Default" in ele_type:
-                poses = [ele_type.find("Default"), ele_type.find(".Default"), ele_type.find(". Default"),
-                         ele_type.find(",Default"), ele_type.find(", Default")]
-            else:
-                poses = [max([ele_type.find(". "), ele_type.find("."), ele_type.find(".\"")]),
-                         ele_type.find(" "), ele_type.find(", ")]
-            poses = [ele for ele in poses if ele > 0]
-            if poses:
-                end_pos = min(poses)
-                ele_type = ele_type[:end_pos]
-            if ele_type:
-                self.ele_type = ele_type
+        if "Type:" not in line:
+            return
+        ele_type = line[line.find("Type:") + len("Type:"):]
+        ele_type = ele_type.strip()
+        if "Default" in ele_type:
+            poses = [ele_type.find("Default"), ele_type.find(".Default"), ele_type.find(". Default"),
+                     ele_type.find(",Default"), ele_type.find(", Default")]
+        else:
+            poses = [max([ele_type.find(". "), ele_type.find("."), ele_type.find(".\"")]),
+                     ele_type.find(" "), ele_type.find(", ")]
+        if poses := [ele for ele in poses if ele > 0]:
+            end_pos = min(poses)
+            ele_type = ele_type[:end_pos]
+        if ele_type:
+            self.ele_type = ele_type
 
     def set_default(self, line):
-        if "Default:" in line:
-            default_val = line[line.find("Default:") + len("Default:"):]
-            default_val = default_val.strip()
-            float_mode = default_val[0].isnumeric()
-            list_mode = default_val[0] == "["
-            end_pos = -1
-            first_point = True
-            if float_mode or list_mode:
-                for index, ele in enumerate(default_val):
-                    end_pos = index
-                    if float_mode and ele.isnumeric():
-                        continue
-                    if float_mode and ele == "." and first_point:
-                        first_point = False
-                        continue
-                    elif float_mode:
-                        break
-                    elif list_mode and ele == "]":
-                        end_pos += 1
-                        break
-            else:
-                poses = [max([default_val.find(". "), default_val.find("."), default_val.find(".\"")]),
-                         default_val.find("\""), default_val.find(" "), default_val.find(", ")]
-                poses = [ele for ele in poses if ele > 0]
-                if poses:
-                    end_pos = min(poses)
-            if end_pos != -1:
-                default_val = default_val[:end_pos]
-            if default_val:
-                self.default_value = default_val
+        if "Default:" not in line:
+            return
+        default_val = line[line.find("Default:") + len("Default:"):]
+        default_val = default_val.strip()
+        float_mode = default_val[0].isnumeric()
+        list_mode = default_val[0] == "["
+        end_pos = -1
+        first_point = True
+        if float_mode or list_mode:
+            for index, ele in enumerate(default_val):
+                end_pos = index
+                if float_mode and ele.isnumeric():
+                    continue
+                if float_mode and ele == "." and first_point:
+                    first_point = False
+                elif float_mode:
+                    break
+                elif list_mode and ele == "]":
+                    end_pos += 1
+                    break
+        else:
+            poses = [max([default_val.find(". "), default_val.find("."), default_val.find(".\"")]),
+                     default_val.find("\""), default_val.find(" "), default_val.find(", ")]
+            if poses := [ele for ele in poses if ele > 0]:
+                end_pos = min(poses)
+        if end_pos != -1:
+            default_val = default_val[:end_pos]
+        if default_val:
+            self.default_value = default_val
 
 def convert_element_to_type(element, ele_type):
-    convert_str = "{}({})".format(ele_type, element)
+    convert_str = f"{ele_type}({element})"
     return eval(convert_str)
 
 
 def check_if_element_is_of_type(element, ele_type):
     try:
-        convert_str = "{}({})".format(ele_type, element)
+        convert_str = f"{ele_type}({element})"
         eval(convert_str)
-    except ValueError:
-        return False
-    except NameError:
-        return False
-    except TypeError:
+    except (ValueError, NameError, TypeError):
         return False
     except SyntaxError as e:
         print(convert_str, ele_type, element)
@@ -158,29 +151,31 @@ def check_if_element_is_correct(current_element):
                                                                                    [ele.ele_type for ele in
                                                                                     current_element.found_usage]))
         else:
-            errors.append("This key '{}' does not have a Type".format(current_element.key_word))
+            errors.append(f"This key '{current_element.key_word}' does not have a Type")
     if current_element.default_value and current_element.found_usage:
         for found_value in current_element.found_usage:
             f_default_v = found_value.default_value
             if f_default_v != current_element.default_value:
                 ele_type = current_element.ele_type.lower()
-                if ele_type == "int" or ele_type == "float":
+                if ele_type in ["int", "float"]:
                     current_def_val = current_element.default_value
                     if check_if_element_is_of_type(f_default_v, found_value.ele_type) and \
                        check_if_element_is_of_type(current_def_val, current_element.ele_type):
                         found_val = convert_element_to_type(f_default_v, found_value.ele_type)
                         current_val = convert_element_to_type(current_def_val, current_element.ele_type)
                         if found_val != current_val:
-                            errors.append("The default value does not match the value in the docu for key: {} "
-                                          "({}!={})".format(current_element.key_word,
-                                                            current_element.default_value, found_value.default_value))
+                            errors.append(
+                                f"The default value does not match the value in the docu for key: {current_element.key_word} ({current_element.default_value}!={found_value.default_value})"
+                            )
 
     elif current_element.found_usage:
-        for found_value in current_element.found_usage:
-            if check_if_element_is_of_type(found_value.default_value, found_value.ele_type):
-                errors.append("The key '{}' misses the default value used in "
-                              "the code: {}".format(current_element.key_word, found_value.default_value))
-
+        errors.extend(
+            f"The key '{current_element.key_word}' misses the default value used in the code: {found_value.default_value}"
+            for found_value in current_element.found_usage
+            if check_if_element_is_of_type(
+                found_value.default_value, found_value.ele_type
+            )
+        )
     return errors
 
 
@@ -198,10 +193,7 @@ if __name__ == "__main__":
         base_name = os.path.basename(py_file)
         if args.src and args.src not in py_file:
             continue
-        skip_this_file = False
-        for exempt_file in exempt_files:
-            if exempt_file in base_name:
-                skip_this_file = True
+        skip_this_file = any(exempt_file in base_name for exempt_file in exempt_files)
         if skip_this_file:
             continue
         if "scripts" not in os.path.abspath(py_file):
@@ -217,10 +209,13 @@ if __name__ == "__main__":
                         break
                     if start_csv_table:
                         line = line.strip()
-                        if line and "\", \"" in line and not ":header:" in line:
+                        if (
+                            line
+                            and "\", \"" in line
+                            and ":header:" not in line
+                        ):
                             line = line[line.find("\"") + 1:]
-                            line = line[:line.find("\"")].strip()
-                            if line:
+                            if line := line[: line.find("\"")].strip():
                                 found_config_values.append(line)
                 list_of_used_config_get = []
                 # checks if there are config values not defined at the top
@@ -229,14 +224,16 @@ if __name__ == "__main__":
                     if "config.get" in line:
                         org_line = org_line[org_line.find("config.get"):]
                         org_line = org_line[:org_line.find(")")+1]
-                        config_element = get_config_element_from_line(line, line_nr)
-                        if config_element:
+                        if config_element := get_config_element_from_line(
+                            line, line_nr
+                        ):
                             key_word = config_element.key_word
                             if " " not in key_word and key_word != "key":
                                 list_of_used_config_get.append(config_element)
                                 if key_word not in found_config_values:
-                                    errors.append("Not found at the top: '{}' " \
-                                                  "in L:{} '{}'".format(key_word, line_nr, org_line.strip()))
+                                    errors.append(
+                                        f"Not found at the top: '{key_word}' in L:{line_nr} '{org_line.strip()}'"
+                                    )
                 start_csv_table = False
                 start_new_config_value = False
                 current_element = None
@@ -253,9 +250,11 @@ if __name__ == "__main__":
                     if start_csv_table:
                         config_element = get_config_value_from_csv_line(line, line_nr)
                         if config_element and " " not in config_element.key_word and config_element.key_word != "key":
-                            found_values = [ele for ele in list_of_used_config_get if
-                                            ele.key_word == config_element.key_word]
-                            if found_values:
+                            if found_values := [
+                                ele
+                                for ele in list_of_used_config_get
+                                if ele.key_word == config_element.key_word
+                            ]:
                                 config_element.found_usage = found_values.copy()
                             if current_element:
                                 # found a new key_word, check the last one
@@ -268,7 +267,12 @@ if __name__ == "__main__":
                             if "Default:" in line:
                                 current_element.set_default(line)
                 if errors:
-                    print("In {}: \n{}".format(base_name, "\n".join(["   "+ele for ele in errors])))
+                    print(
+                        "In {}: \n{}".format(
+                            base_name,
+                            "\n".join([f"   {ele}" for ele in errors]),
+                        )
+                    )
 
 
 

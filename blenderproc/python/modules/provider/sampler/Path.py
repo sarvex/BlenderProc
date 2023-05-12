@@ -58,7 +58,4 @@ class Path(Provider):
         elif self.config.has_param("random_samples"):
             return random.choices(paths, k=self.config.get_int("random_samples"))
         else:
-            # chose a random one
-            chosen_path = choice(paths)
-
-            return chosen_path
+            return choice(paths)

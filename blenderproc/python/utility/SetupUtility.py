@@ -163,11 +163,9 @@ class SetupUtility:
 
         # If the list of installed packages was read from cache
         if SetupUtility.package_list_is_from_cache:
-            # Check if there would be any pip package updates based on the cache
-            found_package_to_install = SetupUtility._pip_install_packages(required_packages, python_bin,
-                                                                          packages_path, dry_run=True)
-            # If yes, reload the list of installed packages
-            if found_package_to_install:
+            if found_package_to_install := SetupUtility._pip_install_packages(
+                required_packages, python_bin, packages_path, dry_run=True
+            ):
                 SetupUtility._ensure_pip(python_bin, packages_path, packages_import_path,
                                          pre_python_package_path, force_update=True)
 
@@ -249,26 +247,25 @@ class SetupUtility:
                 # Set find link flag, if required
                 if find_link:
                     extra_args.extend(["-f", find_link])
-                    package = package_name + "==" + package_version
+                    package = f"{package_name}=={package_version}"
                 # If the env var is set, disable pip cache
                 if os.getenv("BLENDER_PROC_NO_PIP_CACHE", 'False').lower() in ('true', '1', 't'):
                     extra_args.append("--no-cache-dir")
 
-                if not dry_run:
-                    if use_custom_package_path:
-                        extra_args.extend(["--user"])
-                    # Run pip install
-                    # pylint: disable=consider-using-with
-                    subprocess.Popen([python_bin, "-m", "pip", "install", package, "--upgrade"] + extra_args,
-                                     env=dict(os.environ, PYTHONNOUSERSITE="0", PYTHONUSERBASE=packages_path)).wait()
-                    # pylint: enable=consider-using-with
-                    # pylint: disable=unsupported-assignment-operation
-                    SetupUtility.installed_packages[package_name] = package_version
-                    # pylint: enable=unsupported-assignment-operation
-                    packages_were_installed = True
-                else:
+                if dry_run:
                     return True
 
+                if use_custom_package_path:
+                    extra_args.extend(["--user"])
+                # Run pip install
+                # pylint: disable=consider-using-with
+                subprocess.Popen([python_bin, "-m", "pip", "install", package, "--upgrade"] + extra_args,
+                                 env=dict(os.environ, PYTHONNOUSERSITE="0", PYTHONUSERBASE=packages_path)).wait()
+                # pylint: enable=consider-using-with
+                # pylint: disable=unsupported-assignment-operation
+                SetupUtility.installed_packages[package_name] = package_version
+                # pylint: enable=unsupported-assignment-operation
+                packages_were_installed = True
         return packages_were_installed
 
     @staticmethod
@@ -303,43 +300,44 @@ class SetupUtility:
         :param force_update: If True, the installed-packages-cache will be ignored and will be recollected based
                              on the actually installed packages.
         """
-        if SetupUtility.installed_packages is None:
-            if not force_update:
-                cache_path = os.path.join(packages_path, "installed_packages_cache_v2.json")
-                if os.path.exists(cache_path):
-                    with open(cache_path, "r", encoding="utf-8") as f:
-                        SetupUtility.installed_packages = json.load(f)
-                        SetupUtility.package_list_is_from_cache = True
-                    return
+        if SetupUtility.installed_packages is not None:
+            return
+        if not force_update:
+            cache_path = os.path.join(packages_path, "installed_packages_cache_v2.json")
+            if os.path.exists(cache_path):
+                with open(cache_path, "r", encoding="utf-8") as f:
+                    SetupUtility.installed_packages = json.load(f)
+                    SetupUtility.package_list_is_from_cache = True
+                return
 
-            SetupUtility.installed_packages = {}
-            # pylint: disable=consider-using-with
-            subprocess.Popen([python_bin, "-m", "ensurepip"], env=dict(os.environ, PYTHONPATH="")).wait()
-            # Make sure pip is up-to-date
-            subprocess.Popen([python_bin, "-m", "pip", "install", "--upgrade", "pip"],
-                             env=dict(os.environ, PYTHONPATH="")).wait()
-            # pylint: enable=consider-using-with
+        SetupUtility.installed_packages = {}
+        # pylint: disable=consider-using-with
+        subprocess.Popen([python_bin, "-m", "ensurepip"], env=dict(os.environ, PYTHONPATH="")).wait()
+        # Make sure pip is up-to-date
+        subprocess.Popen([python_bin, "-m", "pip", "install", "--upgrade", "pip"],
+                         env=dict(os.environ, PYTHONPATH="")).wait()
+        # pylint: enable=consider-using-with
 
-            # Make sure to not install into the default site-packages path, as this would overwrite
-            # already pre-installed packages
-            if not os.path.exists(packages_path):
-                os.mkdir(packages_path)
+        # Make sure to not install into the default site-packages path, as this would overwrite
+        # already pre-installed packages
+        if not os.path.exists(packages_path):
+            os.mkdir(packages_path)
 
-            # Collect already installed packages by calling pip list (outputs: <package name>==<version>)
-            installed_packages = subprocess.check_output([python_bin, "-m", "pip", "list", "--format=freeze",
-                                                          f"--path={pre_python_package_path}"])
-            installed_packages += subprocess.check_output([python_bin, "-m", "pip", "list", "--format=freeze",
-                                                           f"--path={packages_import_path}"])
+        # Collect already installed packages by calling pip list (outputs: <package name>==<version>)
+        installed_packages = subprocess.check_output([python_bin, "-m", "pip", "list", "--format=freeze",
+                                                      f"--path={pre_python_package_path}"])
+        installed_packages += subprocess.check_output([python_bin, "-m", "pip", "list", "--format=freeze",
+                                                       f"--path={packages_import_path}"])
 
-            # Split up strings into two lists (names and versions)
-            installed_packages_name, installed_packages_versions = zip(*[str(line).lower().split('==')
-                                                                         for line in installed_packages.splitlines()])
-            installed_packages_name = [ele[2:] if ele.startswith("b'") else ele
-                                       for ele in installed_packages_name]
-            installed_packages_versions = [ele[:-1] if ele.endswith("'") else ele
-                                           for ele in installed_packages_versions]
-            SetupUtility.installed_packages = dict(zip(installed_packages_name, installed_packages_versions))
-            SetupUtility.package_list_is_from_cache = False
+        # Split up strings into two lists (names and versions)
+        installed_packages_name, installed_packages_versions = zip(*[str(line).lower().split('==')
+                                                                     for line in installed_packages.splitlines()])
+        installed_packages_name = [ele[2:] if ele.startswith("b'") else ele
+                                   for ele in installed_packages_name]
+        installed_packages_versions = [ele[:-1] if ele.endswith("'") else ele
+                                       for ele in installed_packages_versions]
+        SetupUtility.installed_packages = dict(zip(installed_packages_name, installed_packages_versions))
+        SetupUtility.package_list_is_from_cache = False
 
     @staticmethod
     def clean_installed_packages_cache(blender_path, major_version):
@@ -364,10 +362,10 @@ class SetupUtility:
         try:
             if mode.lower() == "zip":
                 with zipfile.ZipFile(file) as tar:
-                    tar.extractall(str(output_dir))
+                    tar.extractall(output_dir)
             elif mode.lower() == "tar":
                 with tarfile.open(file) as tar:
-                    tar.extractall(str(output_dir))
+                    tar.extractall(output_dir)
             else:
                 raise RuntimeError(f"No such mode: {mode}")
 
@@ -393,24 +391,23 @@ class SetupUtility:
 
         :param path_to_run_file: path to the used python script
         """
-        if os.path.exists(path_to_run_file):
-            with open(path_to_run_file, "r", encoding="utf-8") as file:
-                text = file.read()
-                lines = [l.strip() for l in text.split("\n")]
-                lines = [l for l in lines if l and not l.startswith("#")]
-                for index, line in enumerate(lines):
-                    if "import blenderproc" in line or "from blenderproc" in line:
-                        return
-                    code = "\n".join(lines[:index + 2])
-                    raise RuntimeError(f'The given script "{path_to_run_file}" does not have a blenderproc '
-                                       f'import at the top! Make sure that is the first thing you import, as '
-                                       f'otherwise the import of third-party packages installed in the '
-                                       f'blender environment will fail.\n'
-                                       f'Your code:\n#####################\n{code}\n"'
-                                       f'"####################\nReplaces this with:\n"'
-                                       f'"import blenderproc as bproc"')
-        else:
+        if not os.path.exists(path_to_run_file):
             raise RuntimeError(f"The given run script does not exist: {path_to_run_file}")
+        with open(path_to_run_file, "r", encoding="utf-8") as file:
+            text = file.read()
+            lines = [l.strip() for l in text.split("\n")]
+            lines = [l for l in lines if l and not l.startswith("#")]
+            for index, line in enumerate(lines):
+                if "import blenderproc" in line or "from blenderproc" in line:
+                    return
+                code = "\n".join(lines[:index + 2])
+                raise RuntimeError(f'The given script "{path_to_run_file}" does not have a blenderproc '
+                                   f'import at the top! Make sure that is the first thing you import, as '
+                                   f'otherwise the import of third-party packages installed in the '
+                                   f'blender environment will fail.\n'
+                                   f'Your code:\n#####################\n{code}\n"'
+                                   f'"####################\nReplaces this with:\n"'
+                                   f'"import blenderproc as bproc"')
 
     @staticmethod
     def determine_temp_dir(given_temp_dir: str) -> str:
@@ -426,18 +423,15 @@ class SetupUtility:
         # Determine perfect temp dir
         if given_temp_dir is None:
             if sys.platform != "win32":
-                if os.path.exists("/dev/shm"):
-                    temp_dir = "/dev/shm"
-                else:
-                    temp_dir = "/tmp"
+                temp_dir = "/dev/shm" if os.path.exists("/dev/shm") else "/tmp"
             else:
                 temp_dir = os.getenv("TEMP")
         else:
             temp_dir = given_temp_dir
         # Generate unique directory name in temp dir
-        temp_dir = os.path.join(temp_dir, "blender_proc_" + str(uuid.uuid4().hex))
+        temp_dir = os.path.join(temp_dir, f"blender_proc_{str(uuid.uuid4().hex)}")
         # Create the temp dir
-        print("Using temporary directory: " + temp_dir)
+        print(f"Using temporary directory: {temp_dir}")
         if not os.path.exists(temp_dir):
             os.makedirs(temp_dir)
         return temp_dir

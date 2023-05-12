@@ -83,7 +83,7 @@ class _StereoGlobalMatching:
         if window_size % 2 == 0:
             raise ValueError("Window size must be an odd number")
 
-        if not (num_disparities > 0 and num_disparities % 16 == 0):
+        if num_disparities <= 0 or num_disparities % 16 != 0:
             raise ValueError("Number of disparities must be > 0 and divisible by 16")
 
         left_matcher = cv2.StereoSGBM_create(

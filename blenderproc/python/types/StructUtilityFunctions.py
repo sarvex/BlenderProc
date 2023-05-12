@@ -11,13 +11,8 @@ def get_instances() -> List[Tuple[str, "Struct"]]:
     # this can only be imported here, else it causes a circle import
     #pylint: disable=import-outside-toplevel,cyclic-import
     from blenderproc.python.types.StructUtility import Struct
-    #pylint: enable=import-outside-toplevel,cyclic-import
-
-    instances = []
-    # Iterate over all still existing instances
-    for instance in Struct.__refs__:
-        # Check that the referenced blender_obj inside is valid
-        if instance.is_valid():
-            # Collect instance and its name (its unique identifier)
-            instances.append((instance.get_name(), instance))
-    return instances
+    return [
+        (instance.get_name(), instance)
+        for instance in Struct.__refs__
+        if instance.is_valid()
+    ]

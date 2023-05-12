@@ -20,7 +20,7 @@ bop_objs = bproc.loader.load_bop_objs(bop_dataset_path=os.path.join(args.bop_par
 bproc.loader.load_bop_intrinsics(bop_dataset_path=os.path.join(args.bop_parent_path, args.bop_dataset_name))
 
 # set shading
-for j, obj in enumerate(bop_objs):
+for obj in bop_objs:
     obj.set_shading_mode('auto')
 
 # sample point light on shell

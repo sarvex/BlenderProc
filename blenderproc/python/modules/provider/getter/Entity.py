@@ -158,7 +158,7 @@ class Entity(Provider):
             elif requested_custom_property:
                 # Filter by custom property
                 objects = Filter.by_cp(objects, key, value, regex=True)
-            elif requested_custom_function:
+            else:
                 # Build boundaries of interval
                 conditions = Config(value)
                 if conditions.has_param("min") and conditions.has_param("max"):
@@ -182,7 +182,7 @@ class Entity(Provider):
                     for axis_index in range(3):
                         axis_name = "xyz"[axis_index]
                         for direction in ["min", "max"]:
-                            key_name = "{}_{}".format(axis_name, direction)
+                            key_name = f"{axis_name}_{direction}"
                             if key_name in value:
                                 if direction == "min":
                                     bb_min[axis_index] = float(value[key_name])
@@ -194,7 +194,7 @@ class Entity(Provider):
                 elif key == "outside":
                     objects = Filter.by_attr_outside_interval(objects, "location", bb_min, bb_max)
                 else:
-                    raise Exception("No such custom function: " + str(key))
+                    raise Exception(f"No such custom function: {str(key)}")
 
         return objects
 

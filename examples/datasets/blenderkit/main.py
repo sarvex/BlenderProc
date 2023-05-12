@@ -21,7 +21,7 @@ light.set_energy(1000)
 poi = bproc.object.compute_poi(bproc.filter.all_with_type(objs, bproc.types.MeshObject))
 
 # Sample five camera poses
-for i in range(5):
+for _ in range(5):
     # Sample random camera location around the objects
     location = bproc.sampler.part_sphere([0, 0, 0], radius=2.5, part_sphere_dir_vector=[1, 0, 0], mode="SURFACE")
     # Compute rotation based on vector going from location towards poi

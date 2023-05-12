@@ -54,11 +54,15 @@ class VisNormalImage(Module):
                 data[key] = np.array(file[key])
 
         if "normals" not in data:
-            raise Exception("The hdf5 container does not contain normals: {}".format(path_to_hdf5))
+            raise Exception(f"The hdf5 container does not contain normals: {path_to_hdf5}")
         if "distance" not in data:
-            raise Exception("The hdf5 container does not contain distance data: {}".format(path_to_hdf5))
+            raise Exception(
+                f"The hdf5 container does not contain distance data: {path_to_hdf5}"
+            )
         if "campose" not in data:
-            raise Exception("The hdf5 container does not contain a camera pose: {}".format(path_to_hdf5))
+            raise Exception(
+                f"The hdf5 container does not contain a camera pose: {path_to_hdf5}"
+            )
 
         normal_img = data["normals"]
         distance_img = data["distance"]
@@ -81,7 +85,9 @@ class VisNormalImage(Module):
         tan_angle_y = math.tan(x_angle) * (float(distance_img.shape[0]) / distance_img.shape[1])
         vertices = []
         normals = []
-        rot_mat_camera = mathutils.Matrix([[ele for ele in rows[:3]] for rows in cam_ob.matrix_world[:3]])
+        rot_mat_camera = mathutils.Matrix(
+            [list(rows[:3]) for rows in cam_ob.matrix_world[:3]]
+        )
         for i in range(distance_img.shape[0]):
             for j in range(distance_img.shape[1]):
                 if len(distance_img.shape) == 2:

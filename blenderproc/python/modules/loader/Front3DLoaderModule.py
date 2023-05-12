@@ -58,7 +58,7 @@ class Front3DLoaderModule(LoaderInterface):
 
         self.mapping_file = resolve_path(self.config.get_string("mapping_file", resolve_resource(os.path.join("front_3D", "3D_front_mapping.csv"))))
         if not os.path.exists(self.mapping_file):
-            raise Exception("The mapping file could not be found: {}".format(self.mapping_file))
+            raise Exception(f"The mapping file could not be found: {self.mapping_file}")
 
     def run(self):
         label_mapping = LabelIdMapping.from_csv(self.mapping_file)

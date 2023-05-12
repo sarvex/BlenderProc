@@ -78,9 +78,8 @@ class BlendLoaderModule(LoaderInterface):
                 name_regrex=self.config.get_string("entities", None),
                 data_blocks=self.config.get_raw_value("datablocks", "objects")
             )
+        elif self.config.has_param("paths") and self.config.has_param("path"):
+            raise Exception("Paths and path can not be used at the same time!")
         else:
-            if self.config.has_param("paths") and self.config.has_param("path"):
-                raise Exception("Paths and path can not be used at the same time!")
-            else:
-                raise Exception("You need to specify the path of the .blend file you want to load.")
+            raise Exception("You need to specify the path of the .blend file you want to load.")
         self._set_properties([obj for obj in newly_loaded_objects if isinstance(obj, Entity)])

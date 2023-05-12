@@ -64,7 +64,7 @@ def set_denoiser(denoiser: Optional[str]):
         links.new(render_layer_node.outputs['DiffCol'], denoise_node.inputs['Albedo'])
         links.new(render_layer_node.outputs['Normal'], denoise_node.inputs['Normal'])
     else:
-        raise Exception("No such denoiser: " + denoiser)
+        raise Exception(f"No such denoiser: {denoiser}")
 
 
 def set_light_bounces(diffuse_bounces: Optional[int] = None, glossy_bounces: Optional[int] = None,
@@ -231,13 +231,15 @@ def enable_distance_output(activate_antialiasing: bool, output_dir: Optional[str
     # Feed the Z-Buffer or Mist output of the render layer to the input of the file IO layer
     links.new(final_output, output_file.inputs['Image'])
 
-    Utility.add_output_entry({
-        "key": output_key,
-        "path": os.path.join(output_dir, file_prefix) + "%04d" + ".exr",
-        "version": "2.0.0",
-        "trim_redundant_channels": True,
-        "convert_to_depth": convert_to_depth
-    })
+    Utility.add_output_entry(
+        {
+            "key": output_key,
+            "path": f"{os.path.join(output_dir, file_prefix)}%04d.exr",
+            "version": "2.0.0",
+            "trim_redundant_channels": True,
+            "convert_to_depth": convert_to_depth,
+        }
+    )
     return None
 
 
@@ -292,13 +294,15 @@ def enable_depth_output(activate_antialiasing: bool, output_dir: Optional[str] =
     # Feed the Z-Buffer output of the render layer to the input of the file IO layer
     links.new(render_layer_node.outputs["Depth"], output_file.inputs['Image'])
 
-    Utility.add_output_entry({
-        "key": output_key,
-        "path": os.path.join(output_dir, file_prefix) + "%04d" + ".exr",
-        "version": "2.0.0",
-        "trim_redundant_channels": True,
-        "convert_to_distance": convert_to_distance
-    })
+    Utility.add_output_entry(
+        {
+            "key": output_key,
+            "path": f"{os.path.join(output_dir, file_prefix)}%04d.exr",
+            "version": "2.0.0",
+            "trim_redundant_channels": True,
+            "convert_to_distance": convert_to_distance,
+        }
+    )
     return None
 
 
@@ -383,10 +387,7 @@ def enable_normals_output(output_dir: Optional[str] = None, file_prefix: str = "
         multiply.location.x = space_between_nodes_x * 2 + offset
         multiply.location.y = index * space_between_nodes_y
         links.new(channel_results[channel].outputs["Value"], multiply.inputs[0])
-        if channel == "G":
-            multiply.inputs[1].default_value = -0.5
-        else:
-            multiply.inputs[1].default_value = 0.5
+        multiply.inputs[1].default_value = -0.5 if channel == "G" else 0.5
         add = tree.nodes.new("CompositorNodeMath")
         add.operation = "ADD"
         add.location.x = space_between_nodes_x * 3 + offset
@@ -394,9 +395,9 @@ def enable_normals_output(output_dir: Optional[str] = None, file_prefix: str = "
         links.new(multiply.outputs["Value"], add.inputs[0])
         add.inputs[1].default_value = 0.5
         output_channel = channel
-        if channel == "G":
+        if output_channel == "G":
             output_channel = "B"
-        elif channel == "B":
+        elif output_channel == "B":
             output_channel = "G"
         links.new(add.outputs["Value"], combine_rgba.inputs[output_channel])
 
@@ -407,11 +408,13 @@ def enable_normals_output(output_dir: Optional[str] = None, file_prefix: str = "
     output_file.location.x = space_between_nodes_x * 15
     links.new(combine_rgba.outputs["Image"], output_file.inputs["Image"])
 
-    Utility.add_output_entry({
-        "key": output_key,
-        "path": os.path.join(output_dir, file_prefix) + "%04d" + ".exr",
-        "version": "2.0.0"
-    })
+    Utility.add_output_entry(
+        {
+            "key": output_key,
+            "path": f"{os.path.join(output_dir, file_prefix)}%04d.exr",
+            "version": "2.0.0",
+        }
+    )
 
 
 def enable_segmentation_output(map_by: Union[str, List[str]] = "category_id",
@@ -462,15 +465,17 @@ def enable_segmentation_output(map_by: Union[str, List[str]] = "category_id",
     output_node.base_path = output_dir
     output_node.format.file_format = "OPEN_EXR"
     output_node.file_slots.values()[0].path = file_prefix
-    Utility.add_output_entry({
-        "key": output_key,
-        "path": os.path.join(output_dir, file_prefix) + "%04d" + ".exr",
-        "version": "3.0.0",
-        "trim_redundant_channels": True,
-        "is_semantic_segmentation": True,
-        "semantic_segmentation_mapping": map_by,
-        "semantic_segmentation_default_values": default_values
-    })
+    Utility.add_output_entry(
+        {
+            "key": output_key,
+            "path": f"{os.path.join(output_dir, file_prefix)}%04d.exr",
+            "version": "3.0.0",
+            "trim_redundant_channels": True,
+            "is_semantic_segmentation": True,
+            "semantic_segmentation_mapping": map_by,
+            "semantic_segmentation_default_values": default_values,
+        }
+    )
 
     links.new(render_layer_node.outputs["IndexOB"], output_node.inputs["Image"])
 
@@ -506,11 +511,13 @@ def enable_diffuse_color_output(output_dir: Optional[str] = None, file_prefix: s
     output_file.file_slots.values()[0].path = file_prefix
     links.new(final_output, output_file.inputs['Image'])
 
-    Utility.add_output_entry({
-        "key": output_key,
-        "path": os.path.join(output_dir, file_prefix) + "%04d" + ".png",
-        "version": "2.0.0"
-    })
+    Utility.add_output_entry(
+        {
+            "key": output_key,
+            "path": f"{os.path.join(output_dir, file_prefix)}%04d.png",
+            "version": "2.0.0",
+        }
+    )
 
 
 def map_file_format_to_file_ending(file_format: str) -> str:
@@ -555,7 +562,7 @@ def _progress_bar_thread(pipe_out: int, stdout: IO, total_frames: int, num_sampl
             char = os.read(pipe_out, 1).decode()
 
             # If its the ending character, stop
-            if not char or "\b" == char:
+            if not char or char == "\b":
                 break
             # If the current line has ended
             if char == "\n":
@@ -642,56 +649,55 @@ def render(output_dir: Optional[str] = None, file_prefix: str = "rgb_", output_k
         keys_with_alpha_channel = {'colors'} if bpy.context.scene.render.film_transparent else None
 
     if output_key is not None:
-        Utility.add_output_entry({
-            "key": output_key,
-            "path": os.path.join(output_dir, file_prefix) + "%04d" +
-                    map_file_format_to_file_ending(bpy.context.scene.render.image_settings.file_format),
-            "version": "2.0.0"
-        })
+        Utility.add_output_entry(
+            {
+                "key": output_key,
+                "path": f"{os.path.join(output_dir, file_prefix)}%04d{map_file_format_to_file_ending(bpy.context.scene.render.image_settings.file_format)}",
+                "version": "2.0.0",
+            }
+        )
         load_keys.add(output_key)
 
     bpy.context.scene.render.filepath = os.path.join(output_dir, file_prefix)
 
-    # Skip if there is nothing to render
-    if bpy.context.scene.frame_end != bpy.context.scene.frame_start:
-        if len(get_all_blender_mesh_objects()) == 0:
-            raise Exception("There are no mesh-objects to render, "
-                            "please load an object before invoking the renderer.")
-        # Print what is rendered
-        total_frames = bpy.context.scene.frame_end - bpy.context.scene.frame_start
-        if load_keys:
-            registered_output_keys = [output["key"] for output in Utility.get_registered_outputs()]
-            keys_to_render = sorted([key for key in load_keys if key in registered_output_keys])
-            print(f"Rendering {total_frames} frames of {', '.join(keys_to_render)}...")
-
-        # As frame_end is pointing to the next free frame, decrease it by one, as
-        # blender will render all frames in [frame_start, frame_ned]
-        bpy.context.scene.frame_end -= 1
-
-        # Define pipe to communicate blenders debug messages to progress bar
-        pipe_out, pipe_in = os.pipe()
-        begin = time.time()
-        with stdout_redirected(pipe_in, enabled=not verbose) as stdout:
-            with _render_progress_bar(pipe_out, pipe_in, stdout, total_frames, enabled=not verbose):
-                bpy.ops.render.render(animation=True, write_still=True)
-
-        # Close Pipes to prevent having unclosed file handles
-        try:
-            os.close(pipe_out)
-        except OSError:
-            pass
-        try:
-            os.close(pipe_in)
-        except OSError:
-            pass
-
-        print(f"Finished rendering after {time.time() - begin:.3f} seconds")
-        # Revert changes
-        bpy.context.scene.frame_end += 1
-    else:
+    if bpy.context.scene.frame_end == bpy.context.scene.frame_start:
         raise RuntimeError("No camera poses have been registered, therefore nothing can be rendered. A camera "
                            "pose can be registered via bproc.camera.add_camera_pose().")
 
+    if len(get_all_blender_mesh_objects()) == 0:
+        raise Exception("There are no mesh-objects to render, "
+                        "please load an object before invoking the renderer.")
+    # Print what is rendered
+    total_frames = bpy.context.scene.frame_end - bpy.context.scene.frame_start
+    if load_keys:
+        registered_output_keys = [output["key"] for output in Utility.get_registered_outputs()]
+        keys_to_render = sorted([key for key in load_keys if key in registered_output_keys])
+        print(f"Rendering {total_frames} frames of {', '.join(keys_to_render)}...")
+
+    # As frame_end is pointing to the next free frame, decrease it by one, as
+    # blender will render all frames in [frame_start, frame_ned]
+    bpy.context.scene.frame_end -= 1
+
+    # Define pipe to communicate blenders debug messages to progress bar
+    pipe_out, pipe_in = os.pipe()
+    begin = time.time()
+    with stdout_redirected(pipe_in, enabled=not verbose) as stdout:
+        with _render_progress_bar(pipe_out, pipe_in, stdout, total_frames, enabled=not verbose):
+            bpy.ops.render.render(animation=True, write_still=True)
+
+    # Close Pipes to prevent having unclosed file handles
+    try:
+        os.close(pipe_out)
+    except OSError:
+        pass
+    try:
+        os.close(pipe_in)
+    except OSError:
+        pass
+
+    print(f"Finished rendering after {time.time() - begin:.3f} seconds")
+    # Revert changes
+    bpy.context.scene.frame_end += 1
     return _WriterUtility.load_registered_outputs(load_keys, keys_with_alpha_channel) if return_data else {}
 
 
@@ -854,9 +860,7 @@ def set_render_devices(use_only_cpu: bool = False, desired_gpu_device_type: Unio
         # Go over all specified device types
         found = False
         for device_type in desired_gpu_device_type:
-            # Check if there are devices that support that type
-            devices = preferences.get_devices_for_type(device_type)
-            if devices:
+            if devices := preferences.get_devices_for_type(device_type):
                 # Set device type
                 bpy.context.preferences.addons['cycles'].preferences.compute_device_type = device_type
                 # Go over all devices with that type

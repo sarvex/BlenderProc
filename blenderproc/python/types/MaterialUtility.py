@@ -340,7 +340,7 @@ class Material(Struct):
                 # hopefully 0 is the color node!
                 self.link(node_socket_connected_to_the_connector, mix_node.inputs["Color1"])
                 self.link(mix_node.outputs["Color"], principled_bsdf.inputs[used_connector])
-            elif used_mode == "set":
+            else:
                 self.link(texture_node_output, principled_bsdf.inputs[used_connector])
 
     def infuse_material(self, material: "Material", mode: str = "mix", mix_strength: float = 0.5):

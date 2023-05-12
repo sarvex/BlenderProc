@@ -74,8 +74,8 @@ class StereoGlobalMatchingWriterModule(RendererInterface):
         color_images = []
         for frame in range(bpy.context.scene.frame_start, bpy.context.scene.frame_end):
             path_split = rgb_output_path.split(".")
-            path_l = "{}_L.{}".format(path_split[0], path_split[1])
-            path_r = "{}_R.{}".format(path_split[0], path_split[1])
+            path_l = f"{path_split[0]}_L.{path_split[1]}"
+            path_r = f"{path_split[0]}_R.{path_split[1]}"
 
             imgL = load_image(path_l % frame)
             imgR = load_image(path_r % frame)

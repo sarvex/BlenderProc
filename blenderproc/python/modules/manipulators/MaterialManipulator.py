@@ -453,7 +453,7 @@ class MaterialManipulator(Module):
                 paths_conf = Config(params_conf.get_raw_dict(key))
                 for text_key in paths_conf.data.keys():
                     text_path = paths_conf.get_string(text_key)
-                    result.update({text_key: text_path})
+                    result[text_key] = text_path
             elif key == "cf_switch_to_emission_shader":
                 result = {}
                 emission_conf = Config(params_conf.get_raw_dict(key))
@@ -462,7 +462,7 @@ class MaterialManipulator(Module):
                         attr_val = emission_conf.get_list("color", [1, 1, 1, 1])
                     elif emission_key == "strength":
                         attr_val = emission_conf.get_float("strength", 1.0)
-                    result.update({emission_key: attr_val})
+                    result[emission_key] = attr_val
             elif key == "cf_infuse_texture":
                 result = Config(params_conf.get_raw_dict(key))
             elif key == "cf_infuse_material":
@@ -474,7 +474,7 @@ class MaterialManipulator(Module):
             else:
                 result = params_conf.get_raw_value(key)
 
-            params.update({key: result})
+            params[key] = result
 
         return params
 
@@ -485,9 +485,9 @@ class MaterialManipulator(Module):
         :return: Loaded texture data.
         """
         loaded_textures = {}
-        for key in text_paths.keys():
+        for key in text_paths:
             bpy.ops.image.open(filepath=text_paths[key], directory=os.path.dirname(text_paths[key]))
-            loaded_textures.update({key: bpy.data.images.get(os.path.basename(text_paths[key]))})
+            loaded_textures[key] = bpy.data.images.get(os.path.basename(text_paths[key]))
 
         return loaded_textures
 
@@ -515,21 +515,22 @@ class MaterialManipulator(Module):
         shader_input_key_copy =  shader_input_key.replace("_", " ").upper() if shader_input_key.replace("_", " ").title() == "Ior" else shader_input_key.replace("_", " ").title()
         if principled_bsdf.inputs[shader_input_key_copy].links:
             material.links.remove(principled_bsdf.inputs[shader_input_key_copy].links[0])
-        if shader_input_key_copy in principled_bsdf.inputs:
-            if operation == "set":
-                principled_bsdf.inputs[shader_input_key_copy].default_value = value
-            elif operation == "add":
-                if isinstance(principled_bsdf.inputs[shader_input_key_copy].default_value, float):
-                    principled_bsdf.inputs[shader_input_key_copy].default_value += value
-                else:
-                    if len(principled_bsdf.inputs[shader_input_key_copy].default_value) != len(value):
-                        raise Exception(f"The shapder input key '{shader_input_key_copy}' needs a value with "
-                                        f"{len(principled_bsdf.inputs[shader_input_key_copy].default_value)} "
-                                        f"dimensions, the used config value only has {len(value)} dimensions.")
-                    for i in range(len(principled_bsdf.inputs[shader_input_key_copy].default_value)):
-                        principled_bsdf.inputs[shader_input_key_copy].default_value[i] += value[i]
-        else:
-            raise Exception("Shader input key '{}' is not a part of the shader.".format(shader_input_key_copy))
+        if shader_input_key_copy not in principled_bsdf.inputs:
+            raise Exception(
+                f"Shader input key '{shader_input_key_copy}' is not a part of the shader."
+            )
+        if operation == "add":
+            if isinstance(principled_bsdf.inputs[shader_input_key_copy].default_value, float):
+                principled_bsdf.inputs[shader_input_key_copy].default_value += value
+            else:
+                if len(principled_bsdf.inputs[shader_input_key_copy].default_value) != len(value):
+                    raise Exception(f"The shapder input key '{shader_input_key_copy}' needs a value with "
+                                    f"{len(principled_bsdf.inputs[shader_input_key_copy].default_value)} "
+                                    f"dimensions, the used config value only has {len(value)} dimensions.")
+                for i in range(len(principled_bsdf.inputs[shader_input_key_copy].default_value)):
+                    principled_bsdf.inputs[shader_input_key_copy].default_value[i] += value[i]
+        elif operation == "set":
+            principled_bsdf.inputs[shader_input_key_copy].default_value = value
 
     @staticmethod
     def _link_color_to_displacement_for_mat(material: Material, multiply_factor: float):

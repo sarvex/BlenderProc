@@ -34,8 +34,9 @@ class Front3DPointInRoomSampler:
             counter += 1
 
             for floor_obj in floor_objs:
-                is_above = floor_obj.position_is_above_object(obj.get_location())
-                if is_above:
+                if is_above := floor_obj.position_is_above_object(
+                    obj.get_location()
+                ):
                     floor_obj_counters[floor_obj.get_name()] += 1
         self.used_floors = [obj for obj in floor_objs if
                             floor_obj_counters[obj.get_name()] > amount_of_objects_needed_per_room]

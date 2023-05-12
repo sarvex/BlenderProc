@@ -98,8 +98,14 @@ for i in range(args.num_scenes):
             
     # Define a function that samples the initial pose of a given object above the ground
     def sample_initial_pose(obj: bproc.types.MeshObject):
-        obj.set_location(bproc.sampler.upper_region(objects_to_sample_on=room_planes[0:1],
-                                                    min_height=1, max_height=4, face_sample_range=[0.4, 0.6]))
+        obj.set_location(
+            bproc.sampler.upper_region(
+                objects_to_sample_on=room_planes[:1],
+                min_height=1,
+                max_height=4,
+                face_sample_range=[0.4, 0.6],
+            )
+        )
         obj.set_rotation_euler(np.random.uniform([0, 0, 0], [0, 0, np.pi * 2]))
 
     # Sample objects on the given surface

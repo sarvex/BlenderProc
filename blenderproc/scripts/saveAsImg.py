@@ -29,9 +29,10 @@ def convert_hdf(base_file_path: str, output_folder: Optional[str] = None):
                 print(f"{base_file_path}:")
                 for key, val in data.items():
                     val = np.array(val)
-                    if np.issubdtype(val.dtype, np.string_) or len(val.shape) == 1:
-                        pass  # metadata
-                    else:
+                    if (
+                        not np.issubdtype(val.dtype, np.string_)
+                        and len(val.shape) != 1
+                    ):
                         print(f"key: {key} {val.shape} {val.dtype.name}")
 
                         if val.shape[0] != 2:

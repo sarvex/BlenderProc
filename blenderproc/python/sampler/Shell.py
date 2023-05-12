@@ -64,7 +64,4 @@ def shell(center: Union[Vector, np.ndarray, List[float]], radius_min: float, rad
         # Calculate the uniform radius
         radius = np.random.uniform(radius_min, radius_max)
 
-    # Get the coordinates of a sampled point inside the shell
-    position = direction_vector * radius + center
-
-    return position
+    return direction_vector * radius + center

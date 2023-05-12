@@ -17,7 +17,6 @@ def light_surface(objects: List[MeshObject], emission_strength: float = 10.0, em
     # for each object add a material
     for obj in objects:
         if not obj.has_materials():
-            # If this is the first object without any material
             if empty_material is None:
                 # this object has no material so far -> create one
                 empty_material = obj.new_material("TextureLess")
@@ -35,7 +34,7 @@ def light_surface(objects: List[MeshObject], emission_strength: float = 10.0, em
                 material = material.duplicate()
                 obj.set_material(i, material)
             # rename the material
-            material.set_name(material.get_name() + "_emission")
+            material.set_name(f"{material.get_name()}_emission")
             # add a custom property to later identify these materials
             material.set_cp("is_lamp", True)
 

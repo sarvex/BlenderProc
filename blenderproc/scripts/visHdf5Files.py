@@ -119,10 +119,11 @@ def vis_data(key, data, full_hdf5_data=None, file_label="", rgb_keys=None, flow_
                 plt.title(f"{key} / {channel_label} in {file_label}")
                 plt.imshow(data[:, :, i], cmap='jet')
             else:
-                if data.shape[2] > 1:
-                    filename = save_to_file.replace(".png", f"_{channel_label}.png")
-                else:
-                    filename = save_to_file
+                filename = (
+                    save_to_file.replace(".png", f"_{channel_label}.png")
+                    if data.shape[2] > 1
+                    else save_to_file
+                )
                 plt.imsave(filename, data[:, :, i], cmap='jet')
                 plt.close()
 
@@ -146,12 +147,11 @@ def vis_data(key, data, full_hdf5_data=None, file_label="", rgb_keys=None, flow_
         else:
             plt.imsave(save_to_file, data)
             plt.close()
+    elif save_to_file is None:
+        plt.imshow(data)
     else:
-        if save_to_file is None:
-            plt.imshow(data)
-        else:
-            plt.imsave(save_to_file, data)
-            plt.close()
+        plt.imsave(save_to_file, data)
+        plt.close()
 
 
 def vis_file(path, keys_to_visualize=None, rgb_keys=None, flow_keys=None, segmap_keys=None, segcolormap_keys=None,
@@ -164,7 +164,7 @@ def vis_file(path, keys_to_visualize=None, rgb_keys=None, flow_keys=None, segmap
     if os.path.exists(path):
         if os.path.isfile(path):
             with h5py.File(path, 'r') as data:
-                print(path + ": ")
+                print(f"{path}: ")
 
                 # Select only a subset of keys if args.keys is given
                 if keys_to_visualize is not None:
@@ -177,7 +177,7 @@ def vis_file(path, keys_to_visualize=None, rgb_keys=None, flow_keys=None, segmap
                 for key in keys:
                     value = np.array(data[key])
 
-                    if sum(ele for ele in value.shape) < 5 or "version" in key:
+                    if sum(value.shape) < 5 or "version" in key:
                         if value.dtype == "|S5":
                             res.append(
                                 (key, str(value).replace("[", "").replace("]", "").replace("b'", "").replace("'", "")))

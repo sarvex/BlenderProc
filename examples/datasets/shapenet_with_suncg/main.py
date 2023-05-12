@@ -44,7 +44,7 @@ for obj in bproc.filter.all_with_type(suncg_objs, bproc.types.MeshObject):
 bproc.object.simulate_physics_and_fix_final_poses(min_simulation_time=0.5, max_simulation_time=4, check_object_interval=0.25)
 
 # sample five camera poses
-for i in range(5):
+for _ in range(5):
     # sample random camera location around the shapenet object
     location = bproc.sampler.part_sphere(center=shapenet_obj.get_location(), mode="SURFACE", radius=2, dist_above_center=0.5)
     # compute rotation based on vector going from the camera location towards shapenet object

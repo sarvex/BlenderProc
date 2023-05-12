@@ -53,9 +53,7 @@ def change_target_coordinate_frame_of_transformation_matrix(matrix: Union[np.nda
     """
     tmat = MathUtility.build_coordinate_frame_changing_transformation_matrix(new_frame)
 
-    # Apply transformation matrix
-    output = np.matmul(tmat, matrix)
-    return output
+    return np.matmul(tmat, matrix)
 
 
 def change_source_coordinate_frame_of_transformation_matrix(matrix: Union[np.ndarray, Matrix],
@@ -73,9 +71,7 @@ def change_source_coordinate_frame_of_transformation_matrix(matrix: Union[np.nda
     tmat = MathUtility.build_coordinate_frame_changing_transformation_matrix(new_frame)
     tmat = np.linalg.inv(tmat)
 
-    # Apply transformation matrix
-    output = np.matmul(matrix, tmat)
-    return output
+    return np.matmul(matrix, tmat)
 
 
 def build_transformation_mat(translation: Union[np.ndarray, List[float], Vector],
@@ -120,7 +116,7 @@ class MathUtility:
         :return: The transformation matrix
         """
         assert len(destination_frame) == 3, f"The specified coordinate frame has more or less than " \
-                                            f"tree axes: {destination_frame}"
+                                                f"tree axes: {destination_frame}"
 
         # Build transformation matrix that maps the given matrix to the specified coordinate frame.
         tmat = np.zeros((4, 4))
@@ -134,7 +130,7 @@ class MathUtility:
             elif axis.endswith("Z"):
                 tmat[i, 2] = 1
             else:
-                raise Exception("Invalid axis: " + axis)
+                raise Exception(f"Invalid axis: {axis}")
 
             if axis.startswith("-"):
                 tmat[i] *= -1

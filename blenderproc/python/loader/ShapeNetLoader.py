@@ -89,12 +89,12 @@ class _ShapeNetLoader:
 
                 if not used_source_id:
                     files.extend(glob.glob(os.path.join(id_path, "*", "models", "model_normalized.obj")))
-                else:
-                    if not os.path.exists(os.path.join(id_path, used_source_id)):
-                        raise ValueError(f"The used_source_id {used_source_id} is not correct")
-
+                elif os.path.exists(os.path.join(id_path, used_source_id)):
                     # Using both the used_synset_id and used_source_id
                     files.append(os.path.join(id_path, used_source_id, "models", "model_normalized.obj"))
+
+                else:
+                    raise ValueError(f"The used_source_id {used_source_id} is not correct")
 
             # Sort files to make random choice deterministic for the case when used_source_id is not specified
             files.sort()

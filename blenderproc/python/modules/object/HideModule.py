@@ -57,8 +57,7 @@ class HideModule(Module):
 
         objects = self.config.get_list("selector")
         number_of_frames = self.config.get_int("number_of_frames", bpy.context.scene.frame_end)
-        if number_of_frames > bpy.context.scene.frame_end:
-            number_of_frames = bpy.context.scene.frame_end
+        number_of_frames = min(number_of_frames, bpy.context.scene.frame_end)
         print(f"Will use {number_of_frames} number of frames, for {len(objects)} objects.")
         # iterate over all objects
         for obj in objects:

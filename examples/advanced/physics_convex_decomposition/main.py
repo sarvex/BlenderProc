@@ -14,10 +14,16 @@ bproc.init()
 # Load a bin object that gonna catch the ShapeNet objects
 bin_obj = bproc.loader.load_obj(args.bin_object)[0]
 
-# Load multiple objects from ShapeNet
-shapenet_objs = []
-for synset_id, source_id in [("02801938", "d9fb327b0e19a9ddc735651f0fb19093"), ("02880940", "a9ba34614bfd8ca9938afc5c0b5b182"), ("02691156", "56c605d0b1bd86a9f417244ad1b14759"), ("04380533", "102273fdf8d1b90041fbc1e2da054acb"), ("02954340", "1fd62459ef715e71617fb5e58b4b0232")]:
-    shapenet_objs.append(bproc.loader.load_shapenet(args.shapenet_path, synset_id, source_id))
+shapenet_objs = [
+    bproc.loader.load_shapenet(args.shapenet_path, synset_id, source_id)
+    for synset_id, source_id in [
+        ("02801938", "d9fb327b0e19a9ddc735651f0fb19093"),
+        ("02880940", "a9ba34614bfd8ca9938afc5c0b5b182"),
+        ("02691156", "56c605d0b1bd86a9f417244ad1b14759"),
+        ("04380533", "102273fdf8d1b90041fbc1e2da054acb"),
+        ("02954340", "1fd62459ef715e71617fb5e58b4b0232"),
+    ]
+]
 
 # Define a function that samples the pose of a given ShapeNet object
 def sample_pose(obj: bproc.types.MeshObject):

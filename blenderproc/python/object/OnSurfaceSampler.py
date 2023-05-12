@@ -109,11 +109,14 @@ class _OnSurfaceSampler:
         :return: True if the bounding box is above the surface, False - if not.
         """
         if check_all_bb_corners_over_surface:
-            for point in obj.get_bound_box():
-                if not surface.position_is_above_object(point + up_direction, -up_direction,
-                                                        check_no_objects_in_between=False):
-                    return False
-            return True
+            return all(
+                surface.position_is_above_object(
+                    point + up_direction,
+                    -up_direction,
+                    check_no_objects_in_between=False,
+                )
+                for point in obj.get_bound_box()
+            )
         center = np.mean(obj.get_bound_box(), axis=0)
         return surface.position_is_above_object(center + up_direction, -up_direction, check_no_objects_in_between=False)
 

@@ -23,7 +23,7 @@ bproc.camera.set_resolution(512, 512)
 
 # read the camera positions file and convert into homogeneous camera-world transformation
 with open(args.camera, "r") as f:
-    for line in f.readlines():
+    for line in f:
         line = [float(x) for x in line.split()]
         position, euler_rotation = line[:3], line[3:6]
         matrix_world = bproc.math.build_transformation_mat(position, euler_rotation)

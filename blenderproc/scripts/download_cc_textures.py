@@ -29,43 +29,43 @@ def cli():
     # this loop is necessary as the server only allows downloading the info for 100 materials at once
     current_offset = 0
     data = {}
+    offset_size = 100
     while True:
-        offset_size = 100
         # download the json file, which contains all information
         json_url = f"https://ambientcg.com/api/v2/full_json?include=downloadData&limit={offset_size}" \
                    f"&offset={current_offset}&type=material"
         request = requests.get(json_url, headers=headers, timeout=30)
         json_data = request.json()
         current_offset += offset_size
-        if "foundAssets" in json_data and len(json_data["foundAssets"]) > 0:
-            for asset in json_data["foundAssets"]:
-                if "downloadFolders" in asset and "default" in asset["downloadFolders"] and \
-                        "downloadFiletypeCategories" in asset["downloadFolders"]["default"]:
-                    current_download_dict = asset["downloadFolders"]["default"]["downloadFiletypeCategories"]
-                    if "zip" in current_download_dict and "downloads" in current_download_dict["zip"]:
-                        for download_attr in current_download_dict["zip"]["downloads"]:
-                            if "attribute" in download_attr and download_attr["attribute"] == "2K-JPG":
-                                data[asset["assetId"]] = (
-                                    download_attr["fullDownloadPath"], download_attr["zipContent"])
-                    else:
-                        print(f"No zip or downloads found for asset: {asset['assetId']}")
-                else:
-                    print(f"No downloadFolders or default or downloadFiletypeCategories found for asset: "
-                          f"{asset['assetId']}")
-        else:
+        if (
+            "foundAssets" not in json_data
+            or len(json_data["foundAssets"]) <= 0
+        ):
             break
+        for asset in json_data["foundAssets"]:
+            if "downloadFolders" in asset and "default" in asset["downloadFolders"] and \
+                    "downloadFiletypeCategories" in asset["downloadFolders"]["default"]:
+                current_download_dict = asset["downloadFolders"]["default"]["downloadFiletypeCategories"]
+                if "zip" in current_download_dict and "downloads" in current_download_dict["zip"]:
+                    for download_attr in current_download_dict["zip"]["downloads"]:
+                        if "attribute" in download_attr and download_attr["attribute"] == "2K-JPG":
+                            data[asset["assetId"]] = (
+                                download_attr["fullDownloadPath"], download_attr["zipContent"])
+                else:
+                    print(f"No zip or downloads found for asset: {asset['assetId']}")
+            else:
+                print(f"No downloadFolders or default or downloadFiletypeCategories found for asset: "
+                      f"{asset['assetId']}")
     excluding_list = ["sign", "roadlines", "manhole", "backdrop", "foliage", "TreeEnd", "TreeStump",
                       "3DBread", "3DApple", "FlowerSet", "FoodSteps", "PineNeedles", "Grate",
                       "PavingEdge", "Painting", "RockBrush", "WrinklesBrush", "Sticker", "3DRock"]
 
     # download each asset and create a folder for it (unpacking + deleting the zip included)
     for index, (asset, content) in enumerate(data.items()):
-        # first check if the element should be skipped
-        do_not_use = False
-        for exclude_element in excluding_list:
-            if asset.lower().startswith(exclude_element.lower()):
-                do_not_use = True
-                break
+        do_not_use = any(
+            asset.lower().startswith(exclude_element.lower())
+            for exclude_element in excluding_list
+        )
         if do_not_use:
             continue
 
@@ -77,11 +77,10 @@ def cli():
             current_folder.mkdir(parents=True)
         else:
             files_in_asset_folder = [file_path.name for file_path in current_folder.iterdir()]
-            delete_folder = False
-            for zip_asset in zip_assets:
-                if zip_asset not in files_in_asset_folder:
-                    delete_folder = True
-                    break
+            delete_folder = any(
+                zip_asset not in files_in_asset_folder
+                for zip_asset in zip_assets
+            )
             if delete_folder:
                 print(f"Redownload the asset: {asset}, not all files are present after download")
                 # remove folder and create it again

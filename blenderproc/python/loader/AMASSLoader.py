@@ -139,26 +139,25 @@ class _AMASSLoader:
                 # if none was selected
                 possible_subject_ids = glob.glob(os.path.join(sub_dataset_path, "*"))
                 possible_subject_ids.sort()
-                if len(possible_subject_ids) > 0:
+                if possible_subject_ids:
                     used_subject_id_str = os.path.basename(random.choice(possible_subject_ids))
                 else:
                     raise FileNotFoundError(f"No subjects found in folder: {sub_dataset_path}")
             else:
-                used_subject_id_str = f"{int(used_sequence_id):02d}"
+                used_subject_id_str = f"{used_sequence_id:02d}"
 
             if used_sequence_id < 0:
                 # if no sequence id was selected
                 possible_sequence_ids = glob.glob(os.path.join(sub_dataset_path, used_subject_id_str, "*"))
                 possible_sequence_ids.sort()
-                if len(possible_sequence_ids) > 0:
-                    used_sequence_id = os.path.basename(random.choice(possible_sequence_ids))
-                    used_sequence_id = used_sequence_id[used_sequence_id.find("_")+1:used_sequence_id.rfind("_")]
-                else:
+                if not possible_sequence_ids:
                     raise FileNotFoundError(f"No sequences found in folder: "
                                             f"{os.path.join(sub_dataset_path, used_subject_id_str)}")
+                used_sequence_id = os.path.basename(random.choice(possible_sequence_ids))
+                used_sequence_id = used_sequence_id[used_sequence_id.find("_")+1:used_sequence_id.rfind("_")]
             subject_path = os.path.join(sub_dataset_path, used_subject_id_str)
             used_subject_id_str_reduced = used_subject_id_str[:used_subject_id_str.find("_")] \
-                if "_" in used_subject_id_str else used_subject_id_str
+                    if "_" in used_subject_id_str else used_subject_id_str
             sequence_path = os.path.join(subject_path, used_subject_id_str_reduced +
                                          f"_{int(used_sequence_id):02d}_poses.npz")
             if os.path.exists(sequence_path):
@@ -229,16 +228,15 @@ class _AMASSLoader:
         # dictionary contains mocap dataset name and path to its sub folder within the main dataset, dictionary will
         # be filled from taxonomy.json file which indicates the supported datastests
         supported_mocap_datasets = {}
-        if os.path.exists(taxonomy_file_path):
-            with open(taxonomy_file_path, "r", encoding="utf-8") as f:
-                loaded_data = json.load(f)
-                for block in loaded_data:
-                    if "sub_data_id" in block:
-                        sub_dataset_id = block["sub_data_id"]
-                        supported_mocap_datasets[sub_dataset_id] = os.path.join(data_path, block["path"])
-        else:
+        if not os.path.exists(taxonomy_file_path):
             raise FileNotFoundError(f"The taxonomy file could not be found: {taxonomy_file_path}")
 
+        with open(taxonomy_file_path, "r", encoding="utf-8") as f:
+            loaded_data = json.load(f)
+            for block in loaded_data:
+                if "sub_data_id" in block:
+                    sub_dataset_id = block["sub_data_id"]
+                    supported_mocap_datasets[sub_dataset_id] = os.path.join(data_path, block["path"])
         return supported_mocap_datasets
 
 

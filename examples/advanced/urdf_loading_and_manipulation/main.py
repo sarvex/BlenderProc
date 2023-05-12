@@ -18,7 +18,7 @@ robot.set_ascending_category_ids()
 for link in robot.links:
     if link.visuals:
         for mat in link.visuals[0].get_materials():
-            if 'mica' in link.get_name() and not 'drive' in link.get_name():
+            if 'mica' in link.get_name() and 'drive' not in link.get_name():
                 if 'distal' in link.get_name():
                     mat.set_principled_shader_value("Roughness", 0.3)
                     mat.set_principled_shader_value("Specular", 0.8)

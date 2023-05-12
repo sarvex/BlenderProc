@@ -40,13 +40,12 @@ def load_replica_segmented_mesh(data_path: Union[str, Path], data_set_name: str,
 
     json_file_path = current_folder / "habitat" / "info_semantic.json"
 
-    class_mapping = {}
     with open(json_file_path, "r", encoding="utf-8") as file:
         data = json.load(file)
 
-    for ele in data["classes"]:
-        if "id" in ele:
-            class_mapping[ele["id"]] = ele["name"]
+    class_mapping = {
+        ele["id"]: ele["name"] for ele in data["classes"] if "id" in ele
+    }
     for ele in data["objects"]:
         if "id" in ele:
             class_mapping[ele["id"]] = ele["class_name"]
@@ -71,7 +70,7 @@ def load_replica_segmented_mesh(data_path: Union[str, Path], data_set_name: str,
     objs = []
     for current_class_id in used_class_ids:
         used_obj_name = class_mapping.get(current_class_id, "undefined")
-        obj = create_with_empty_mesh(used_obj_name, used_obj_name + "_mesh")
+        obj = create_with_empty_mesh(used_obj_name, f"{used_obj_name}_mesh")
         # add this new data to the mesh object
         mesh = obj.get_mesh()
 

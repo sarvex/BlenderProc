@@ -95,8 +95,11 @@ class RockEssentialsGroundConstructor(LoaderInterface):
         :param ground_config: Config object that contains user-defined settings for ground plane. Type: Config.
         """
         shader_path = ground_config.get_string("shader_path")
-        bpy.ops.wm.append(filepath=os.path.join(shader_path, "/NodeTree", "", "PBR Rock Shader"),
-                          filename="PBR Rock Shader", directory=os.path.join(shader_path+"/NodeTree"))
+        bpy.ops.wm.append(
+            filepath=os.path.join(shader_path, "/NodeTree", "", "PBR Rock Shader"),
+            filename="PBR Rock Shader",
+            directory=os.path.join(f"{shader_path}/NodeTree"),
+        )
 
     def _construct_ground_plane(self, ground_config):
         """ Constructs a ground plane.
@@ -142,7 +145,7 @@ class RockEssentialsGroundConstructor(LoaderInterface):
         bpy.ops.object.modifier_add(type="SUBSURF")
 
         # create new texture
-        texture_name = tile_name + "_texture"
+        texture_name = f"{tile_name}_texture"
         bpy.data.textures.new(name=texture_name, type="IMAGE")
 
         # set new texture as a displacement texture, set UV texture coordinates

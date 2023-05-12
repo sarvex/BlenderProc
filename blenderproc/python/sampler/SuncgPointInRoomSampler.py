@@ -62,7 +62,13 @@ class SuncgPointInRoomSampler:
         :param room_obj: The room object.
         :return: The found floor object or None if none has been found.
         """
-        for obj in suncg_objects:
-            if obj.get_parent() == room_obj and obj.has_cp("suncg_type") and obj.get_cp("suncg_type") == "Floor":
-                return obj
-        return None
+        return next(
+            (
+                obj
+                for obj in suncg_objects
+                if obj.get_parent() == room_obj
+                and obj.has_cp("suncg_type")
+                and obj.get_cp("suncg_type") == "Floor"
+            ),
+            None,
+        )

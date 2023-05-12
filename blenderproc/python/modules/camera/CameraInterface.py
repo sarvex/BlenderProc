@@ -317,7 +317,7 @@ class CameraInterface(Module):
             # Print warning if local_frame_change is used with other attributes than cam2world_matrix
             if self.local_frame_change != ["X", "Y", "Z"]:
                 print("Warning: The local_frame_change parameter is at the moment only supported when setting the cam2world_matrix attribute.")
-                
+
             position = change_coordinate_frame_of_point(config.get_vector3d("location", [0, 0, 0]), self.world_frame_change)
 
             # Rotation
@@ -325,7 +325,7 @@ class CameraInterface(Module):
             value = config.get_vector3d("rotation/value", [0, 0, 0])
             # Transform to blender coord frame
             value = change_coordinate_frame_of_point(value, self.world_frame_change)
-            
+
             if rotation_format == "euler":
                 # Rotation, specified as euler angles
                 rotation_matrix = Euler(value, 'XYZ').to_matrix()
@@ -336,9 +336,9 @@ class CameraInterface(Module):
                 # Convert forward vector to euler angle (Assume Up = Z)
                 rotation_matrix = CameraUtility.rotation_from_forward_vec(value - position)
             else:
-                raise Exception("No such rotation format:" + str(rotation_format))
+                raise Exception(f"No such rotation format:{str(rotation_format)}")
 
-            if rotation_format == "look_at" or rotation_format == "forward_vec":
+            if rotation_format in ["look_at", "forward_vec"]:
                 inplane_rot = config.get_float("rotation/inplane_rot", 0.0)
                 rotation_matrix = np.matmul(rotation_matrix, Euler((0.0, 0.0, inplane_rot)).to_matrix())
 

@@ -54,8 +54,7 @@ class LoaderInterface(Module):
         :param objects: A list of objects which should receive the custom properties.
         """
 
-        should_merge_objects = self.config.get_bool("cf_merge_objects", False)
-        if should_merge_objects:
+        if should_merge_objects := self.config.get_bool("cf_merge_objects", False):
             merged_object_name = self.config.get_string("cf_merged_object_name", "merged_object")
             parent_object = merge_objects(objects=objects, merged_object_name=merged_object_name)
             objects.append(parent_object)
@@ -65,16 +64,15 @@ class LoaderInterface(Module):
 
         for obj in objects:
             for key, value in properties.items():
-                if key.startswith("cp_"):
-                    key = key[3:]
-                    if isinstance(obj, Struct):
-                        obj.set_cp(key, value)
-                    else:
-                        obj[key] = value
-                else:
+                if not key.startswith("cp_"):
                     raise RuntimeError(
                         "Loader modules support setting only custom properties. Use 'cp_' prefix for keys. "
                         "Use manipulators.Entity for setting object's attribute values.")
+                key = key[3:]
+                if isinstance(obj, Struct):
+                    obj.set_cp(key, value)
+                else:
+                    obj[key] = value
             if material_properties and isinstance(obj, MeshObject):
                 for material in obj.get_materials():
                     if material is None:

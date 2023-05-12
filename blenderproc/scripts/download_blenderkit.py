@@ -75,7 +75,7 @@ def download_blendkit_assets(asset_types: List[str], output_dir: str):
                 continue
 
             # Download metadata for blend file
-            with urllib.request.urlopen(download_url + "?scene_uuid=" + scene_uuid) as url:
+            with urllib.request.urlopen(f"{download_url}?scene_uuid={scene_uuid}") as url:
                 data = json.loads(url.read().decode())
                 # Extract actual download path
                 file_path = data["filePath"]

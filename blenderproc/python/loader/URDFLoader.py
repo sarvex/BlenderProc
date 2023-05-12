@@ -101,7 +101,11 @@ def get_joints_which_have_link_as_parent(link_name: str, joint_trees: List["urdf
     :param joint_trees: List of urdfpy.Joint objects.
     :return: List of urdfpy.Joint objects.
     """
-    return [joint_tree for i, joint_tree in enumerate(joint_trees) if joint_tree.parent == link_name]
+    return [
+        joint_tree
+        for joint_tree in joint_trees
+        if joint_tree.parent == link_name
+    ]
 
 
 def get_joints_which_have_link_as_child(link_name: str, joint_trees: List["urdfpy.Joint"]) -> Optional["urdfpy.Joint"]:
@@ -111,7 +115,11 @@ def get_joints_which_have_link_as_child(link_name: str, joint_trees: List["urdfp
     :param joint_trees: List of urdfpy.Joint objects.
     :return: List of urdfpy.Joint objects, or None if no joint is defined as parent for the respective link.
     """
-    valid_joint_trees = [joint_tree for i, joint_tree in enumerate(joint_trees) if joint_tree.child == link_name]
+    valid_joint_trees = [
+        joint_tree
+        for joint_tree in joint_trees
+        if joint_tree.child == link_name
+    ]
     if not valid_joint_trees:  # happens for the very first link
         warnings.warn(f"WARNING: There is no joint defined for the link {link_name}!")
         return None
@@ -167,23 +175,23 @@ def create_bone(armature: bpy.types.Armature, joint_tree: "urdfpy.Joint", all_jo
         editbone.parent = parent_bone
 
     # create fk bone
-    fk_editbone = edit_bones.new(joint_tree.name + '.fk')
+    fk_editbone = edit_bones.new(f'{joint_tree.name}.fk')
     axis = Matrix(origin[:3, :3]) @ Vector(joint_tree.axis)
     fk_editbone.head = Vector(origin[:3, -1]) + Vector(fk_offset)
     fk_editbone.tail = fk_editbone.head + axis.normalized() * 0.2
 
     if parent_bone_name is not None:
-        parent_bone = edit_bones.get(parent_bone_name + '.fk')
+        parent_bone = edit_bones.get(f'{parent_bone_name}.fk')
         fk_editbone.parent = parent_bone
 
     # create ik bone
-    ik_editbone = edit_bones.new(joint_tree.name + '.ik')
+    ik_editbone = edit_bones.new(f'{joint_tree.name}.ik')
     axis = Matrix(origin[:3, :3]) @ Vector(joint_tree.axis)
     ik_editbone.head = Vector(origin[:3, -1]) + Vector(ik_offset)
     ik_editbone.tail = ik_editbone.head + axis.normalized() * 0.2
 
     if parent_bone_name is not None:
-        parent_bone = edit_bones.get(parent_bone_name + '.ik')
+        parent_bone = edit_bones.get(f'{parent_bone_name}.ik')
         ik_editbone.parent = parent_bone
 
     bone_name = editbone.name
@@ -280,8 +288,8 @@ def load_links(link_trees: List["urdfpy.Link"], joint_trees: List["urdfpy.Joint"
         # if there exists a joint also set the corresponding bones to the link
         if corresponding_joint is not None:
             link.set_bone(armature.pose.bones.get(corresponding_joint.name))
-            link.set_fk_bone(armature.pose.bones.get(corresponding_joint.name + '.fk'))
-            link.set_ik_bone(armature.pose.bones.get(corresponding_joint.name + '.ik'))
+            link.set_fk_bone(armature.pose.bones.get(f'{corresponding_joint.name}.fk'))
+            link.set_ik_bone(armature.pose.bones.get(f'{corresponding_joint.name}.ik'))
             link.set_joint_type(corresponding_joint.joint_type)
 
         links.append(link)
@@ -392,7 +400,7 @@ def load_visual_collision_obj(viscol_tree: Union["urdfpy.Visual", "urdfpy.Collis
         # check for textures
         if viscol_tree.material.texture is not None:
             # image should've been loaded automatically
-            mat = MaterialLoaderUtility.create(name=viscol_tree.material.name + "_texture")
+            mat = MaterialLoaderUtility.create(name=f"{viscol_tree.material.name}_texture")
             nodes = mat.nodes
             links = mat.links
 
@@ -457,9 +465,13 @@ def get_size_from_geometry(geometry: "urdfpy.Geometry") -> Optional[float]:
     if geometry.mesh is not None:
         if hasattr(geometry.geometry, "scale") and geometry.geometry.scale is not None:
             return max(geometry.geometry.scale)
-        if hasattr(geometry.geometry, "size") and geometry.geometry.size is not None:
-            return max(geometry.geometry.size)
-        return None
+        else:
+            return (
+                max(geometry.geometry.size)
+                if hasattr(geometry.geometry, "size")
+                and geometry.geometry.size is not None
+                else None
+            )
     if geometry.sphere is not None:
         return geometry.geometry.radius
     print(f"Warning: Failed to derive size from geometry model {geometry}. Setting scale to 0.2!")

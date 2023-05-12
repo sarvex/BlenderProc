@@ -114,7 +114,7 @@ class Texture(Provider):
             textures = [textures[self.config.get_int("index")]]
         elif random_samples and not has_index:
             textures = sample(textures, k=min(random_samples, len(textures)))
-        elif has_index and random_samples:
+        elif has_index:
             raise RuntimeError("Please, define only one of two: `index` or `random_samples`.")
 
         check_if_return_is_empty = self.config.get_bool("check_empty", False)
@@ -131,9 +131,7 @@ class Texture(Provider):
         """
         conditions = self.config.get_raw_dict('conditions')
         text = json.dumps(conditions, indent=2, sort_keys=True)
-        # Add indent
-        text = "\n".join(" " * len("Exception: ") + e for e in text.split("\n"))
-        return text
+        return "\n".join(" " * len("Exception: ") + e for e in text.split("\n"))
 
     @staticmethod
     def perform_and_condition_check(and_condition, textures, used_textures_to_check=None):
@@ -168,37 +166,40 @@ class Texture(Provider):
                     # check if the type of the value of attribute matches desired
                     if isinstance(getattr(texture, key), type(value)):
                         new_value = value
-                    # if not, try to enforce some mathutils-specific type
+                    elif isinstance(getattr(texture, key), mathutils.Vector):
+                        new_value = mathutils.Vector(value)
+                    elif isinstance(getattr(texture, key), mathutils.Euler):
+                        new_value = mathutils.Euler(value)
+                    elif isinstance(getattr(texture, key), mathutils.Color):
+                        new_value = mathutils.Color(value)
                     else:
-                        if isinstance(getattr(texture, key), mathutils.Vector):
-                            new_value = mathutils.Vector(value)
-                        elif isinstance(getattr(texture, key), mathutils.Euler):
-                            new_value = mathutils.Euler(value)
-                        elif isinstance(getattr(texture, key), mathutils.Color):
-                            new_value = mathutils.Color(value)
-                        # raise an exception if it is none of them
-                        else:
-                            raise Exception("Types are not matching: %s and %s !"
-                                            % (type(getattr(texture, key)), type(value)))
+                        raise Exception(
+                            f"Types are not matching: {type(getattr(texture, key))} and {type(value)} !"
+                        )
                     # or check for equality
-                    if not ((isinstance(getattr(texture, key), str) and
-                             re.fullmatch(value, getattr(texture, key)) is not None)
-                            or getattr(texture, key) == new_value):
+                    if (
+                        not isinstance(getattr(texture, key), str)
+                        or re.fullmatch(value, getattr(texture, key)) is None
+                    ) and getattr(texture, key) != new_value:
                         select_texture = False
                         break
-                    # check if a custom property with this name exists
+                                # check if a custom property with this name exists
                 elif key in texture and requested_custom_property:
-                    # check if the type of the value of such custom property matches desired
-                    if isinstance(texture[key], type(value)) or (
-                            isinstance(texture[key], int) and isinstance(value, bool)):
-                        # if it is a string and if the whole string matches the given pattern
-                        if not ((isinstance(texture[key], str) and re.fullmatch(value, texture[key]) is not None) or
-                                texture[key] == value):
-                            select_texture = False
-                            break
-                    else:
+                    if not isinstance(texture[key], type(value)) and (
+                        not isinstance(texture[key], int)
+                        or not isinstance(value, bool)
+                    ):
                         # raise an exception if not
-                        raise Exception("Types are not matching: {} and {} !".format(type(texture[key]), type(value)))
+                        raise Exception(
+                            f"Types are not matching: {type(texture[key])} and {type(value)} !"
+                        )
+                        # if it is a string and if the whole string matches the given pattern
+                    if (
+                        not isinstance(texture[key], str)
+                        or re.fullmatch(value, texture[key]) is None
+                    ) and texture[key] != value:
+                        select_texture = False
+                        break
                 else:
                     select_texture = False
                     break

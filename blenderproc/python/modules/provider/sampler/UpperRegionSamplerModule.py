@@ -83,8 +83,9 @@ class UpperRegionSamplerModule(Provider):
         min_height = self.config.get_float("min_height", 0.0)
         max_height = self.config.get_float("max_height", 1.0)
         if max_height < min_height:
-            raise Exception("The minimum height ({}) must be smaller "
-                            "than the maximum height ({})!".format(min_height, max_height))
+            raise Exception(
+                f"The minimum height ({min_height}) must be smaller than the maximum height ({max_height})!"
+            )
         use_ray_trace_check = self.config.get_bool('use_ray_trace_check', False)
 
         # the upper direction, to define what is up in the scene

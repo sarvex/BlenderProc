@@ -52,10 +52,7 @@ def slice_faces_with_normals(mesh_object: MeshObject, compare_angle_degrees: flo
     ms = MeanShift(bandwidth=bandwidth_in_meter, bin_seeding=True)
     ms.fit(np.array(list_of_median_poses_only_z_value).reshape((-1, 1)))
 
-    all_labels = {}
-    for l in np.unique(ms.labels_):
-        all_labels[l] = 0.0
-
+    all_labels = {l: 0.0 for l in np.unique(ms.labels_)}
     faces = [face for value, face in list_of_median_poses]
     for label, face in zip(ms.labels_, faces):
         all_labels[label] += face.calc_area()
@@ -67,18 +64,15 @@ def slice_faces_with_normals(mesh_object: MeshObject, compare_angle_degrees: flo
             f.select = True
     bpy.ops.mesh.separate(type='SELECTED')
 
-    selected_objects = bpy.context.selected_objects
-    if selected_objects:
-        if len(selected_objects) == 2:
-            selected_objects = [o for o in selected_objects
-                                if o != bpy.context.view_layer.objects.active]
-            selected_objects[0].name = new_name_for_object
-            newly_created_object = MeshObject(selected_objects[0])
-        else:
-            raise RuntimeError("There is more than one selection after splitting, this should not happen!")
-    else:
+    if not (selected_objects := bpy.context.selected_objects):
         raise RuntimeError("No surface object was constructed!")
 
+    if len(selected_objects) != 2:
+        raise RuntimeError("There is more than one selection after splitting, this should not happen!")
+    selected_objects = [o for o in selected_objects
+                        if o != bpy.context.view_layer.objects.active]
+    selected_objects[0].name = new_name_for_object
+    newly_created_object = MeshObject(selected_objects[0])
     mesh_object.object_mode()
 
     return newly_created_object

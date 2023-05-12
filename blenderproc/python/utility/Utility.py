@@ -349,12 +349,13 @@ class Utility:
         # Read in windows
         windows = []
         with open(resolve_resource(os.path.join('suncg', 'ModelCategoryMapping.csv')), 'r',
-                  encoding="utf-8") as csvfile:
+                      encoding="utf-8") as csvfile:
             reader = csv.DictReader(csvfile)
-            for row in reader:
-                if row["coarse_grained_class"] == "window":
-                    windows.append(row["model_id"])
-
+            windows.extend(
+                row["model_id"]
+                for row in reader
+                if row["coarse_grained_class"] == "window"
+            )
         return lights, windows
 
     @staticmethod
@@ -371,8 +372,12 @@ class Utility:
         for suffix in ["Module", ""]:
             try:
                 # Import class from blenderproc.python.modules
-                module_class = getattr(importlib.import_module("blenderproc.python.modules.provider." + name + suffix),
-                                       name.split(".")[-1] + suffix)
+                module_class = getattr(
+                    importlib.import_module(
+                        f"blenderproc.python.modules.provider.{name}{suffix}"
+                    ),
+                    name.split(".")[-1] + suffix,
+                )
                 break
             except ModuleNotFoundError:
                 # Try next suffix
@@ -380,7 +385,9 @@ class Utility:
 
         # Throw an error if no module/class with the specified name + any suffix has been found
         if module_class is None:
-            raise Exception("The module blenderproc.python.modules.provider." + name + " was not found!")
+            raise Exception(
+                f"The module blenderproc.python.modules.provider.{name} was not found!"
+            )
 
         # Build configuration
         config = Config(parameters)
@@ -408,11 +415,11 @@ class Utility:
         if isinstance(config, dict):
             config = Config(config)
 
-        parameters = {}
-        for key in config.data.keys():
-            if key != 'provider':
-                parameters[key] = config.data[key]
-
+        parameters = {
+            key: config.data[key]
+            for key in config.data.keys()
+            if key != 'provider'
+        }
         if not config.has_param('provider'):
             raise RuntimeError(f"Each provider needs a provider label, this one does not contain one: {config.data}")
 
@@ -538,11 +545,14 @@ class Utility:
         :return: The dict containing all information registered for that output. If no output with the given
                  key exists, None is returned.
         """
-        for output in Utility.get_registered_outputs():
-            if output["key"] == key:
-                return output
-
-        return None
+        return next(
+            (
+                output
+                for output in Utility.get_registered_outputs()
+                if output["key"] == key
+            ),
+            None,
+        )
 
     @staticmethod
     def get_registered_outputs() -> List[Dict[str, Any]]:
@@ -550,11 +560,11 @@ class Utility:
 
         :return: A list of dicts containing all information registered for the outputs.
         """
-        outputs = []
-        if GlobalStorage.is_in_storage("output"):
-            outputs = GlobalStorage.get("output")
-
-        return outputs
+        return (
+            GlobalStorage.get("output")
+            if GlobalStorage.is_in_storage("output")
+            else []
+        )
 
     @staticmethod
     def output_already_registered(output: Dict[str, Any], output_list: List[Dict[str, Any]]) -> bool:
@@ -621,7 +631,9 @@ class UndoAfterExecution:
 
     def __init__(self, check_point_name: Optional[str] = None, perform_undo_op: bool = True):
         if check_point_name is None:
-            check_point_name = inspect.stack()[1].filename + " - " + inspect.stack()[1].function
+            check_point_name = (
+                f"{inspect.stack()[1].filename} - {inspect.stack()[1].function}"
+            )
         self.check_point_name = check_point_name
         self._perform_undo_op = perform_undo_op
         self.struct_instances: List[Tuple[str, "Struct"]] = []
@@ -630,13 +642,13 @@ class UndoAfterExecution:
         if self._perform_undo_op:
             # Collect all existing struct instances
             self.struct_instances = get_instances()
-            bpy.ops.ed.undo_push(message="before " + self.check_point_name)
+            bpy.ops.ed.undo_push(message=f"before {self.check_point_name}")
 
     def __exit__(self, exc_type: Optional[Type[BaseException]],
                  exc_value: Optional[BaseException],
                  traceback: Optional[TracebackType]):
         if self._perform_undo_op:
-            bpy.ops.ed.undo_push(message="after " + self.check_point_name)
+            bpy.ops.ed.undo_push(message=f"after {self.check_point_name}")
             # The current state points to "after", now by calling undo we go back to "before"
             bpy.ops.ed.undo()
             # After applying undo, all references to blender objects are invalid.
@@ -710,10 +722,7 @@ def get_file_descriptor(file_or_fd: Union[int, IO]) -> int:
     :param file_or_fd: Either a file or a file descriptor. If a file descriptor is given, it is returned directly.
     :return: The file descriptor of the given file.
     """
-    if hasattr(file_or_fd, 'fileno'):
-        fd = file_or_fd.fileno()
-    else:
-        fd = file_or_fd
+    fd = file_or_fd.fileno() if hasattr(file_or_fd, 'fileno') else file_or_fd
     if not isinstance(fd, int):
         raise AttributeError("Expected a file (`.fileno()`) or a file descriptor")
     return fd

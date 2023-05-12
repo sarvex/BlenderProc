@@ -18,8 +18,7 @@ def render_optical_flow(output_dir: str = None, temp_dir: str = None, get_forwar
                         forward_flow_output_key: str = "forward_flow",
                         backward_flow_output_file_prefix: str = "backward_flow_",
                         backward_flow_output_key: str = "backward_flow", return_data: bool = True,
-                        verbose: bool = False) -> \
-        Dict[str, Union[np.ndarray, List[np.ndarray]]]:
+                        verbose: bool = False) -> Dict[str, Union[np.ndarray, List[np.ndarray]]]:
     """ Renders the optical flow (forward and backward) for all frames.
 
     :param output_dir: The directory to write images to.
@@ -36,7 +35,7 @@ def render_optical_flow(output_dir: str = None, temp_dir: str = None, get_forwar
     :param verbose: If True, more details about the rendering process are printed.
     :return: dict of lists of raw renderer outputs. Keys can be 'forward_flow', 'backward_flow'
     """
-    if get_forward_flow is False and get_backward_flow is False:
+    if not get_forward_flow and not get_backward_flow:
         raise RuntimeError("Take the FlowRenderer Module out of the config if both forward and "
                            "backward flow are set to False!")
 
@@ -65,25 +64,25 @@ def render_optical_flow(output_dir: str = None, temp_dir: str = None, get_forwar
         for frame in range(bpy.context.scene.frame_start, bpy.context.scene.frame_end):
             # temporarily save respective vector fields
             if get_forward_flow:
-                file_path = temporary_fwd_flow_file_path + f"{frame:04d}" + ".exr"
+                file_path = f"{temporary_fwd_flow_file_path}{frame:04d}.exr"
                 fwd_flow_field = load_image(file_path, num_channels=4).astype(np.float32)
 
                 if not blender_image_coordinate_style:
                     fwd_flow_field[:, :, 1] = fwd_flow_field[:, :, 1] * -1
 
-                file_name = os.path.join(output_dir, forward_flow_output_file_prefix) + f"{frame:04d}"
+                file_name = f"{os.path.join(output_dir, forward_flow_output_file_prefix)}{frame:04d}"
                 forward_flow = fwd_flow_field * -1  # invert forward flow to point at next frame
-                np.save(file_name + '.npy', forward_flow[:, :, :2])
+                np.save(f'{file_name}.npy', forward_flow[:, :, :2])
 
             if get_backward_flow:
-                file_path = temporary_bwd_flow_file_path + f"{frame:04d}" + ".exr"
+                file_path = f"{temporary_bwd_flow_file_path}{frame:04d}.exr"
                 bwd_flow_field = load_image(file_path, num_channels=4).astype(np.float32)
 
                 if not blender_image_coordinate_style:
                     bwd_flow_field[:, :, 1] = bwd_flow_field[:, :, 1] * -1
 
-                file_name = os.path.join(output_dir, backward_flow_output_file_prefix) + f"{frame:04d}"
-                np.save(file_name + '.npy', bwd_flow_field[:, :, :2])
+                file_name = f"{os.path.join(output_dir, backward_flow_output_file_prefix)}{frame:04d}"
+                np.save(f'{file_name}.npy', bwd_flow_field[:, :, :2])
 
     load_keys = set()
     # register desired outputs

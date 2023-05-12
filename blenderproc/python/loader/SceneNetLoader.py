@@ -72,11 +72,11 @@ class _SceneNetLoader:
                 principled_bsdf = material.get_the_one_node_with_type("BsdfPrincipled")
                 texture_nodes = material.get_nodes_with_type("ShaderNodeTexImage")
                 if not texture_nodes or len(texture_nodes) == 1:
-                    if len(texture_nodes) == 1:
-                        # these materials do not exist they are just named in the .mtl files
-                        texture_node = texture_nodes[0]
-                    else:
-                        texture_node = material.new_node("ShaderNodeTexImage")
+                    texture_node = (
+                        texture_nodes[0]
+                        if len(texture_nodes) == 1
+                        else material.new_node("ShaderNodeTexImage")
+                    )
                     mat_name = material.get_name()
                     if "." in mat_name:
                         mat_name = mat_name[:mat_name.find(".")]
@@ -90,9 +90,9 @@ class _SceneNetLoader:
                                                     f"{unknown_texture_folder}, check if it was set correctly "
                                                     f"via the config.")
                         image_paths = glob.glob(os.path.join(unknown_texture_folder, "*"))
-                        if not image_paths:
-                            raise FileNotFoundError(f"The unknown texture folder did not contain any "
-                                                    f"textures: {unknown_texture_folder}")
+                    if not image_paths:
+                        raise FileNotFoundError(f"The unknown texture folder did not contain any "
+                                                f"textures: {unknown_texture_folder}")
                     image_paths.sort()
                     image_path = random.choice(image_paths)
                     if os.path.exists(image_path):

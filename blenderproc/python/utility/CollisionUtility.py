@@ -115,8 +115,7 @@ class CollisionUtility:
 
     @staticmethod
     def check_mesh_intersection(obj1: MeshObject, obj2: MeshObject, skip_inside_check: bool = False,
-                                bvh_cache: Optional[Dict[str, mathutils.bvhtree.BVHTree]] = None) \
-            -> Tuple[bool, Dict[str, mathutils.bvhtree.BVHTree]]:
+                                bvh_cache: Optional[Dict[str, mathutils.bvhtree.BVHTree]] = None) -> Tuple[bool, Dict[str, mathutils.bvhtree.BVHTree]]:
         """
         Checks if the two objects are intersecting.
 
@@ -163,20 +162,27 @@ class CollisionUtility:
                                                             Matrix(obj2.get_local2world_mat()) @
                                                             obj2.get_mesh().vertices[0].co)
             if inter:
-                print("Warning: Detected that " + obj2.get_name() + " is completely inside " + obj1.get_name() +
-                      ". This might be wrong, if " + obj1.get_name() +
-                      " is not water tight or has incorrect normals. If that is the case, consider setting "
-                      "skip_inside_check to True.")
+                print(
+                    (
+                        f"Warning: Detected that {obj2.get_name()} is completely inside {obj1.get_name()}. This might be wrong, if {obj1.get_name()}"
+                        + " is not water tight or has incorrect normals. If that is the case, consider setting "
+                        "skip_inside_check to True."
+                    )
+                )
 
         # Optionally check whether obj1 is contained in obj2
         if not inter and not skip_inside_check:
             inter = CollisionUtility.is_point_inside_object(obj2, obj2_BVHtree, Matrix(obj1.get_local2world_mat())
                                                             @ obj1.get_mesh().vertices[0].co)
             if inter:
-                print("Warning: Detected that " + obj1.get_name() + " is completely inside " + obj2.get_name() +
-                      ". This might be wrong, if " + obj2.get_name() + " is not water tight or has incorrect "
-                                                                       "normals. If that is the case, consider "
-                                                                       "setting skip_inside_check to True.")
+                print(
+                    (
+                        f"Warning: Detected that {obj1.get_name()} is completely inside {obj2.get_name()}. This might be wrong, if {obj2.get_name()}"
+                        + " is not water tight or has incorrect "
+                        "normals. If that is the case, consider "
+                        "setting skip_inside_check to True."
+                    )
+                )
 
         return inter, bvh_cache
 

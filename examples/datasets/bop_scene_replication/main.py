@@ -17,9 +17,9 @@ bop_objs = bproc.loader.load_bop_scene(bop_dataset_path = os.path.join(args.bop_
                           split = 'test') # careful, some BOP datasets only have labeled 'val' sets
 
 # set shading
-for j, obj in enumerate(bop_objs):
+for obj in bop_objs:
     obj.set_shading_mode('auto')
-        
+
 # Set light source
 light_point = bproc.types.Light()
 light_point.set_energy(1000)

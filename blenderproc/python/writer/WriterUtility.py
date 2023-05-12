@@ -47,45 +47,45 @@ def write_hdf5(output_dir_path: str, output_data_dict: Dict[str, List[Union[np.n
         if isinstance(data_block, list):
             amount_of_frames = max([amount_of_frames, len(data_block)])
 
+    frame_offset = 0
     # if append to existing output is turned on the existing folder is searched for the highest occurring
     # index, which is then used as starting point for this run
     if append_to_existing_output:
-        frame_offset = 0
         # Look for hdf5 file with highest index
         for path in os.listdir(output_dir_path):
             if path.endswith(".hdf5"):
                 index = path[:-len(".hdf5")]
                 if index.isdigit():
                     frame_offset = max(frame_offset, int(index) + 1)
-    else:
-        frame_offset = 0
-
     if amount_of_frames != bpy.context.scene.frame_end - bpy.context.scene.frame_start:
         raise Exception("The amount of images stored in the output_data_dict does not correspond with the amount"
                         "of images specified by frame_start to frame_end.")
 
     for frame in range(bpy.context.scene.frame_start, bpy.context.scene.frame_end):
         # for each frame a new .hdf5 file is generated
-        hdf5_path = os.path.join(output_dir_path, str(frame + frame_offset) + ".hdf5")
+        hdf5_path = os.path.join(output_dir_path, f"{str(frame + frame_offset)}.hdf5")
         with h5py.File(hdf5_path, "w") as file:
             # Go through all the output types
             print(f"Merging data for frame {frame} into {hdf5_path}")
 
             adjusted_frame = frame - bpy.context.scene.frame_start
             for key, data_block in output_data_dict.items():
-                if adjusted_frame < len(data_block):
-                    # get the current data block for the current frame
-                    used_data_block = data_block[adjusted_frame]
-                    if stereo_separate_keys and (bpy.context.scene.render.use_multiview or
-                                                 used_data_block.shape[0] == 2):
-                        # stereo mode was activated
-                        _WriterUtility.write_to_hdf_file(file, key + "_0", data_block[adjusted_frame][0])
-                        _WriterUtility.write_to_hdf_file(file, key + "_1", data_block[adjusted_frame][1])
-                    else:
-                        _WriterUtility.write_to_hdf_file(file, key, data_block[adjusted_frame])
-                else:
+                if adjusted_frame >= len(data_block):
                     raise Exception(f"There are more frames {adjusted_frame} then there are blocks of information "
                                     f" {len(data_block)} in the given list for key {key}.")
+                # get the current data block for the current frame
+                used_data_block = data_block[adjusted_frame]
+                if stereo_separate_keys and (bpy.context.scene.render.use_multiview or
+                                                 used_data_block.shape[0] == 2):
+                        # stereo mode was activated
+                    _WriterUtility.write_to_hdf_file(
+                        file, f"{key}_0", data_block[adjusted_frame][0]
+                    )
+                    _WriterUtility.write_to_hdf_file(
+                        file, f"{key}_1", data_block[adjusted_frame][1]
+                    )
+                else:
+                    _WriterUtility.write_to_hdf_file(file, key, data_block[adjusted_frame])
             blender_proc_version = Utility.get_current_version()
             if blender_proc_version is not None:
                 _WriterUtility.write_to_hdf_file(file, "blender_proc_version", np.string_(blender_proc_version))
@@ -175,7 +175,7 @@ class _WriterUtility:
         :return: Loaded data from the file as numpy array if possible.
         """
         if not os.path.exists(file_path):
-            raise FileNotFoundError("File not found: " + file_path)
+            raise FileNotFoundError(f"File not found: {file_path}")
 
         file_ending = file_path[file_path.rfind(".") + 1:].lower()
 
@@ -187,7 +187,7 @@ class _WriterUtility:
         elif file_ending in ["csv"]:
             output = _WriterUtility.load_csv(file_path)
         else:
-            raise NotImplementedError("File with ending " + file_ending + " cannot be loaded.")
+            raise NotImplementedError(f"File with ending {file_ending} cannot be loaded.")
 
         if remove:
             os.remove(file_path)
@@ -203,8 +203,7 @@ class _WriterUtility:
         rows = []
         with open(file_path, mode='r', encoding="utf-8") as csv_file:
             csv_reader = csv.DictReader(csv_file)
-            for row in csv_reader:
-                rows.append(row)
+            rows.extend(iter(csv_reader))
         return rows
 
     @staticmethod
@@ -230,8 +229,12 @@ class _WriterUtility:
             world_frame_change = ["X", "Y", "Z"]
 
         # Print warning if local_frame_change is used with other attributes than matrix_world
-        if local_frame_change != ["X", "Y", "Z"] and attribute_name in ["location", "rotation_euler",
-                                                                        "rotation_forward_vec", "rotation_up_vec"]:
+        if local_frame_change != ["X", "Y", "Z"] and attribute_name in {
+            "location",
+            "rotation_euler",
+            "rotation_forward_vec",
+            "rotation_up_vec",
+        }:
             print("Warning: The local_frame_change parameter is at the moment only supported by "
                   "the matrix_world attribute.")
 
@@ -349,16 +352,15 @@ class _WriterUtility:
         :param data: The data to store.
         """
         if not isinstance(data, np.ndarray) and not isinstance(data, np.bytes_):
-            if isinstance(data, (list, dict)):
-                # If the data contains one or multiple dicts that contain e.q. object states
-                if isinstance(data, dict) or len(data) > 0 and isinstance(data[0], dict):
-                    # Serialize them into json (automatically convert numpy arrays to lists)
-                    data = np.string_(json.dumps(data, cls=NumpyEncoder))
-                data = np.array(data)
-            else:
+            if not isinstance(data, (list, dict)):
                 raise Exception(
                     f"This fct. expects the data for key {key} to be a np.ndarray, list or dict not a {type(data)}!")
 
+            # If the data contains one or multiple dicts that contain e.q. object states
+            if isinstance(data, dict) or len(data) > 0 and isinstance(data[0], dict):
+                # Serialize them into json (automatically convert numpy arrays to lists)
+                data = np.string_(json.dumps(data, cls=NumpyEncoder))
+            data = np.array(data)
         if data.dtype.char == 'S':
             file.create_dataset(key, data=data, dtype=data.dtype)
         else:

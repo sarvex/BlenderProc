@@ -58,12 +58,10 @@ def load_ccmaterials(folder_path: str = "resources/cctextures", used_assets: lis
         materials = []
         for asset in os.listdir(folder_path):
             if used_assets:
-                skip_this_one = True
-                for used_asset in used_assets:
-                    # lower is necessary here, as all used assets are made that that way
-                    if asset.lower().startswith(used_asset.replace(" ", "")):
-                        skip_this_one = False
-                        break
+                skip_this_one = not any(
+                    asset.lower().startswith(used_asset.replace(" ", ""))
+                    for used_asset in used_assets
+                )
                 if skip_this_one:
                     continue
             current_path = os.path.join(folder_path, asset)
@@ -135,10 +133,8 @@ class _CCMaterialLoader:
         principled_bsdf = Utility.get_the_one_node_with_type(nodes, "BsdfPrincipled")
         output_node = Utility.get_the_one_node_with_type(nodes, "OutputMaterial")
 
-        collection_of_texture_nodes = []
         base_color = MaterialLoaderUtility.add_base_color(nodes, links, base_image_path, principled_bsdf)
-        collection_of_texture_nodes.append(base_color)
-
+        collection_of_texture_nodes = [base_color]
         principled_bsdf.inputs["Specular"].default_value = 0.333
 
         ao_node = MaterialLoaderUtility.add_ambient_occlusion(nodes, links, ambient_occlusion_image_path,

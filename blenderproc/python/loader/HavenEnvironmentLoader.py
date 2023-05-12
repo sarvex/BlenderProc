@@ -45,19 +45,15 @@ def get_random_world_background_hdr_img_path_from_haven(data_path: str) -> str:
     :return The path to a random selected path
     """
 
-    if os.path.exists(data_path):
-        data_path = os.path.join(data_path, "hdris")
-        if not os.path.exists(data_path):
-            raise FileNotFoundError(f"The folder: {data_path} does not contain a folder name hdfris. "
-                                    f"Please use the download script.")
-    else:
+    if not os.path.exists(data_path):
         raise FileNotFoundError(f"The data path does not exists: {data_path}")
 
+    data_path = os.path.join(data_path, "hdris")
+    if not os.path.exists(data_path):
+        raise FileNotFoundError(f"The folder: {data_path} does not contain a folder name hdfris. "
+                                f"Please use the download script.")
     hdr_files = glob.glob(os.path.join(data_path, "*", "*.hdr"))
     # this will be ensure that the call is deterministic
     hdr_files.sort()
 
-    # this file be used
-    random_hdr_file = random.choice(hdr_files)
-
-    return random_hdr_file
+    return random.choice(hdr_files)

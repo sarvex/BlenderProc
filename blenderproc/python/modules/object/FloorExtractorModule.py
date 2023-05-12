@@ -126,7 +126,9 @@ class FloorExtractorModule(Module):
         mesh_objects = []
         for obj in self.config.get_list("selector"):
             if obj.type != "MESH":
-                warnings.warn("The object: {} is not a mesh but was selected in the FloorExtractor!".format(obj.name))
+                warnings.warn(
+                    f"The object: {obj.name} is not a mesh but was selected in the FloorExtractor!"
+                )
                 continue
             mesh_objects.append(MeshObject(obj))
 
@@ -138,8 +140,7 @@ class FloorExtractorModule(Module):
             should_skip_if_object_is_already_there=self.config.get_bool("should_skip_if_object_is_already_there", False)
         )
 
-        add_properties = self.config.get_raw_dict("add_properties", {})
-        if add_properties:
+        if add_properties := self.config.get_raw_dict("add_properties", {}):
             config = Config({"add_properties": add_properties})
             loader_interface = LoaderInterface(config)
             loader_interface._set_properties(floors)

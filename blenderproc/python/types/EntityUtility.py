@@ -242,7 +242,15 @@ def create_empty(entity_name: str, empty_type: str = "plain_axes") -> "Entity":
                        "circle", "cube", "sphere", "cone"]
     :return: The new Mesh entity.
     """
-    if empty_type.lower() in ["plain_axes", "arrows", "single_arrow", "circle", "cube", "sphere", "cone"]:
+    if empty_type.lower() in {
+        "plain_axes",
+        "arrows",
+        "single_arrow",
+        "circle",
+        "cube",
+        "sphere",
+        "cone",
+    }:
         bpy.ops.object.empty_add(type=empty_type.upper(), align="WORLD")
     else:
         raise RuntimeError(f'Unknown basic empty type "{empty_type}"! Available types: "plain_axes".')

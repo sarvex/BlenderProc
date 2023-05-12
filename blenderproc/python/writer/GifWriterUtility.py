@@ -125,15 +125,13 @@ class _GifWriterUtility:
         """
         Looks for the highest existing #.gif number and adapts respectively
         """
+        gif_number = 0
         if append_to_existing_output:
-            gif_number = 0
             for path in os.listdir(output_dir_path):
                 if path.endswith(name_ending):
                     index = path[:-len(name_ending)]
                     if index.isdigit():
                         gif_number = max(gif_number, int(index) + 1)
-        else:
-            gif_number = 0
         return gif_number
 
     @staticmethod

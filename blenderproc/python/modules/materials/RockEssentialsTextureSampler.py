@@ -148,9 +148,7 @@ class RockEssentialsTextureSampler(LoaderInterface):
         :return: Selected texture data. Type: Config.
         """
         selected_dict = choice(textures)
-        selected_texture = Config(selected_dict)
-
-        return selected_texture
+        return Config(selected_dict)
 
     def _load_images(self, selected_texture):
         """ Loads images that are used as color, roughness, reflection, normal, and displacement maps.
@@ -181,7 +179,7 @@ class RockEssentialsTextureSampler(LoaderInterface):
                 bpy.data.images[value].colorspace_settings.name = 'Non-Color'
 
             # update return dict
-            loaded_images.update({key: bpy.data.images.get(value)})
+            loaded_images[key] = bpy.data.images.get(value)
 
         return loaded_images, uv_scaling, ambient_occlusion, displacement_strength
 
@@ -197,9 +195,14 @@ class RockEssentialsTextureSampler(LoaderInterface):
             if re.fullmatch(self.target_material, material[0]):
                 mat_obj = bpy.data.materials[material[0]]
             else:
-                raise Exception("No RE material " + self.target_material + " found in selected objects. Check if "
-                                "constructor.RockEssentialsGroundConstructor module was run at least once and created "
-                                "at least one ground tile!")
+                raise Exception(
+                    (
+                        f"No RE material {self.target_material}"
+                        + " found in selected objects. Check if "
+                        "constructor.RockEssentialsGroundConstructor module was run at least once and created "
+                        "at least one ground tile!"
+                    )
+                )
 
         # get the node tree of the current material
         nodes = mat_obj.node_tree.nodes
@@ -211,7 +214,7 @@ class RockEssentialsTextureSampler(LoaderInterface):
                 node.image = images[node.label]
 
         # get texture name for a displacement modifier of the current ground tile
-        texture_name = ground_tile.name + "_texture"
+        texture_name = f"{ground_tile.name}_texture"
         # if displacement map (image) was provided and loaded - set it to the modifier
         if "displacement" in images.keys():
             bpy.data.textures[texture_name].image = images['displacement']

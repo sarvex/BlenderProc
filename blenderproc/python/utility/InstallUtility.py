@@ -99,11 +99,7 @@ class InstallUtility:
                 blender_path = os.path.join(blender_install_path, blender_version)
             elif platform == "darwin":
                 # check if the current mac uses an Intel x86 processor
-                if "x86" in machine():
-                    blender_version += "-macos-x64"
-                else:
-                    # or an Apple Silicon
-                    blender_version += "-macos-arm64"
+                blender_version += "-macos-x64" if "x86" in machine() else "-macos-arm64"
                 blender_install_path = os.path.join(blender_install_path, blender_version)
                 blender_path = os.path.join(blender_install_path, "Blender.app")
             elif platform == "win32":
@@ -128,20 +124,19 @@ class InstallUtility:
                     except ImportError as e:
                         print("For decompressing \".xz\" files in python 2.x is it necessary to use lzma")
                         raise e  # from import lzma -> pip install --user pyliblzma
-                used_url = "https://download.blender.org/release/Blender" + major_version + "/" + blender_version
+                used_url = f"https://download.blender.org/release/Blender{major_version}/{blender_version}"
                 if platform in ["linux", "linux2"]:
-                    url = used_url + ".tar.xz"
+                    url = f"{used_url}.tar.xz"
                 elif platform == "darwin":
-                    url = used_url + ".dmg"
+                    url = f"{used_url}.dmg"
                 elif platform == "win32":
-                    url = used_url + ".zip"
+                    url = f"{used_url}.zip"
                 else:
                     raise RuntimeError(f"This system is not supported yet: {platform}")
                 try:
                     try:
                         # pylint: disable=import-outside-toplevel
                         import progressbar
-                        # pylint: enable=import-outside-toplevel
                         class DownloadProgressBar:
                             """
                             Download progress bar, uses the progressbar library to display a progressbar during download
@@ -159,24 +154,23 @@ class InstallUtility:
                                 else:
                                     self.pbar.finish()
 
-                        print("Downloading blender from " + url)
+                        print(f"Downloading blender from {url}")
                         file_tmp = urlretrieve(url, None, DownloadProgressBar())[0]
                     except ImportError:
                         print("Progressbar for downloading, can only be shown, "
                               "when the python package \"progressbar\" is installed")
                         file_tmp = urlretrieve(url, None)[0]
                 except URLError as e:
-                    if platform == "win32":
-                        # on windows this is a known problem that the ssl certificates doesn't properly work
-                        # deactivate the ssl check
-                        if (not os.environ.get('PYTHONHTTPSVERIFY', '') and
-                                getattr(ssl, '_create_unverified_context', None)):
-                            # pylint: disable=protected-access
-                            ssl._create_default_https_context = ssl._create_unverified_context
-                            # pylint: enable=protected-access
-                        file_tmp = urlretrieve(url, None)[0]
-                    else:
+                    if platform != "win32":
                         raise e
+                    # on windows this is a known problem that the ssl certificates doesn't properly work
+                    # deactivate the ssl check
+                    if (not os.environ.get('PYTHONHTTPSVERIFY', '') and
+                            getattr(ssl, '_create_unverified_context', None)):
+                        # pylint: disable=protected-access
+                        ssl._create_default_https_context = ssl._create_unverified_context
+                        # pylint: enable=protected-access
+                    file_tmp = urlretrieve(url, None)[0]
                 if platform in ["linux", "linux2"]:
                     if version_info.major == 3:
                         SetupUtility.extract_file(blender_install_path, file_tmp, "TAR")
@@ -187,42 +181,56 @@ class InstallUtility:
                 elif platform == "darwin":
                     if not os.path.exists(blender_install_path):
                         os.makedirs(blender_install_path)
-                    os.rename(file_tmp, os.path.join(blender_install_path, blender_version + ".dmg"))
+                    os.rename(
+                        file_tmp,
+                        os.path.join(
+                            blender_install_path, f"{blender_version}.dmg"
+                        ),
+                    )
                     # pylint: disable=consider-using-with
                     # installing the blender app by mounting it and extracting the information
-                    subprocess.Popen([f"hdiutil attach {os.path.join(blender_install_path, blender_version + '.dmg')}"],
-                                     shell=True).wait()
+                    subprocess.Popen(
+                        [
+                            f"hdiutil attach {os.path.join(blender_install_path, f'{blender_version}.dmg')}"
+                        ],
+                        shell=True,
+                    ).wait()
                     subprocess.Popen([f'cp -r {os.path.join("/", "Volumes", "Blender", "Blender.app")} '
                                       f'{blender_install_path}'], shell=True).wait()
                     subprocess.Popen([f'diskutil unmount {os.path.join("/", "Volumes", "Blender")}'], shell=True)
                     # removing the downloaded image again
-                    subprocess.Popen([f'rm {os.path.join(blender_install_path, blender_version + ".dmg")}'],
-                                     shell=True).wait()
-                    # pylint: enable=consider-using-with
-                    # add Blender.app path to it
+                    subprocess.Popen(
+                        [
+                            f'rm {os.path.join(blender_install_path, f"{blender_version}.dmg")}'
+                        ],
+                        shell=True,
+                    ).wait()
+                                # pylint: enable=consider-using-with
+                                # add Blender.app path to it
                 elif platform == "win32":
                     SetupUtility.extract_file(blender_install_path, file_tmp)
                 # rename the blender folder to better fit our existing scheme
                 for folder in os.listdir(blender_install_path):
                     if os.path.isdir(os.path.join(blender_install_path, folder)) and \
-                            folder.startswith(f"blender-{major_version}.{minor_version}"):
+                                folder.startswith(f"blender-{major_version}.{minor_version}"):
                         os.rename(os.path.join(blender_install_path, folder),
                                   os.path.join(blender_install_path, blender_version))
         else:
             blender_path = os.path.expanduser(custom_blender_path)
 
-            # Try to get major version of given blender installation
-            major_version = None
-            for sub_dir in os.listdir(blender_path):
-                # Search for the subdirectory which has the major version as its name
-                if os.path.isdir(os.path.join(blender_path, sub_dir)) and sub_dir.replace(".", "").isdigit():
-                    major_version = sub_dir
-                    break
-
+            major_version = next(
+                (
+                    sub_dir
+                    for sub_dir in os.listdir(blender_path)
+                    if os.path.isdir(os.path.join(blender_path, sub_dir))
+                    and sub_dir.replace(".", "").isdigit()
+                ),
+                None,
+            )
             if major_version is None:
                 raise RuntimeError("Could not determine major blender version")
 
-        print("Using blender in " + blender_path)
+        print(f"Using blender in {blender_path}")
 
         # Run script
         if platform in ["linux", "linux2"]:

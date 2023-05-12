@@ -180,7 +180,7 @@ class CameraSampler(CameraInterface):
         """ Sets camera poses. """
 
         source_specs = self.config.get_list("cam_poses")
-        for i, source_spec in enumerate(source_specs):
+        for source_spec in source_specs:
             self.cam_pose_collection.add_item(source_spec)
 
     def _sample_cam_poses(self, config):
@@ -217,7 +217,7 @@ class CameraSampler(CameraInterface):
 
         # Determine the number of camera poses to sample
         number_of_poses = config.get_int("number_of_samples", 1)
-        print("Sampling " + str(number_of_poses) + " cam poses")
+        print(f"Sampling {str(number_of_poses)} cam poses")
 
         # Start with max interest score
         self.interest_score = self.interest_score_range
@@ -227,7 +227,7 @@ class CameraSampler(CameraInterface):
         tries = 0
         existing_poses = []
 
-        for i in range(number_of_poses):
+        for _ in range(number_of_poses):
             # Do until a valid pose has been found or the max number of tries has been reached
             while tries < self.max_tries:
                 tries += 1
@@ -243,7 +243,7 @@ class CameraSampler(CameraInterface):
                 if continue_trying:
                     tries = 0
 
-        print(str(all_tries) + " tries were necessary")
+        print(f"{str(all_tries)} tries were necessary")
 
     def sample_and_validate_cam_pose(self, config: Config, existing_poses: List[np.ndarray]) -> bool:
         """ Samples a new camera pose, sets the parameters of the given camera object accordingly and validates it.
@@ -277,8 +277,7 @@ class CameraSampler(CameraInterface):
         """
         :return: The new sampled pose.
         """
-        cam2world_matrix = self._cam2world_matrix_from_cam_extrinsics(config)
-        return cam2world_matrix
+        return self._cam2world_matrix_from_cam_extrinsics(config)
 
     def _is_pose_valid(self, cam2world_matrix: np.ndarray, existing_poses: List[np.ndarray]) -> bool:
         """ Determines if the given pose is valid.

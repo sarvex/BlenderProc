@@ -18,7 +18,7 @@ light.set_location([5, -5, 5])
 light.set_energy(1000)
 
 # Sample five camera poses
-for i in range(5):
+for _ in range(5):
     # Sample random camera location around the object
     location = bproc.sampler.sphere([0, 0, 0], radius=2, mode="SURFACE")
     # Compute rotation based on vector going from location towards the location of the ShapeNet object
@@ -42,13 +42,13 @@ shapenet_state = {
 # Add to the main data dict (its the same for all frames here)
 data["shapenet_state"] = [shapenet_state] * bproc.utility.num_frames()
 
-# Collect state of the camera at all frames
-cam_states = []
-for frame in range(bproc.utility.num_frames()):
-    cam_states.append({
+cam_states = [
+    {
         "cam2world": bproc.camera.get_camera_pose(frame),
-        "cam_K": bproc.camera.get_intrinsics_as_K_matrix()
-    })
+        "cam_K": bproc.camera.get_intrinsics_as_K_matrix(),
+    }
+    for frame in range(bproc.utility.num_frames())
+]
 # Adds states to the data dict
 data["cam_states"] = cam_states
 

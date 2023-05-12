@@ -18,7 +18,7 @@ light.set_location([5, -5, 5])
 light.set_energy(1000)
 
 # Sample five camera poses
-for i in range(5):
+for _ in range(5):
     # Sample random camera location around the object
     location = bproc.sampler.sphere([0, 0, 0], radius=2, mode="SURFACE")
     # Compute rotation based on vector going from location towards the location of the ShapeNet object

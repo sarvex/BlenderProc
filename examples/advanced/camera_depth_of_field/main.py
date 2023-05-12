@@ -29,7 +29,7 @@ bproc.camera.add_depth_of_field(focus_point, fstop_value=0.25)
 # Find point of interest, all cam poses should look towards it
 poi = bproc.object.compute_poi(objs)
 # Sample five camera poses
-for i in range(5):
+for _ in range(5):
     # Sample random camera location above objects
     location = bproc.sampler.part_sphere(center=[0, 0, 0], radius=7, mode="SURFACE", dist_above_center=1.0)
     # Compute rotation based on vector going from location towards poi

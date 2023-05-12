@@ -73,11 +73,13 @@ def write_bop(output_dir: str, target_objects: Optional[List[MeshObject]] = None
     if target_objects is not None:
         dataset_objects = target_objects
     elif dataset:
-        dataset_objects = []
-        for obj in get_all_mesh_objects():
-            if "bop_dataset_name" in obj.blender_obj and not obj.blender_obj.hide_render:
-                if obj.blender_obj["bop_dataset_name"] == dataset:
-                    dataset_objects.append(obj)
+        dataset_objects = [
+            obj
+            for obj in get_all_mesh_objects()
+            if "bop_dataset_name" in obj.blender_obj
+            and not obj.blender_obj.hide_render
+            and obj.blender_obj["bop_dataset_name"] == dataset
+        ]
     else:
         dataset_objects = get_all_mesh_objects()
 
@@ -273,7 +275,7 @@ class _BopWriterUtility:
             cam_t_m2c = cam_H_m2c.to_translation()
 
             # ignore examples that fell through the plane
-            if not np.linalg.norm(list(cam_t_m2c)) > ignore_dist_thres:
+            if np.linalg.norm(list(cam_t_m2c)) <= ignore_dist_thres:
                 cam_t_m2c = list(cam_t_m2c * unit_scaling)
                 frame_gt.append({
                     'cam_R_m2c': list(cam_R_m2c[0]) + list(cam_R_m2c[1]) + list(cam_R_m2c[2]),
@@ -425,12 +427,12 @@ class _BopWriterUtility:
                 color_rgb = colors[frame_id]
                 color_bgr = color_rgb.copy()
                 color_bgr[..., :3] = color_bgr[..., :3][..., ::-1]
-                if color_file_format == 'PNG':
-                    rgb_fpath = rgb_tpath.format(chunk_id=curr_chunk_id, im_id=curr_frame_id, im_type='.png')
-                    cv2.imwrite(rgb_fpath, color_bgr)
-                elif color_file_format == 'JPEG':
+                if color_file_format == 'JPEG':
                     rgb_fpath = rgb_tpath.format(chunk_id=curr_chunk_id, im_id=curr_frame_id, im_type='.jpg')
                     cv2.imwrite(rgb_fpath, color_bgr, [int(cv2.IMWRITE_JPEG_QUALITY), jpg_quality])
+                elif color_file_format == 'PNG':
+                    rgb_fpath = rgb_tpath.format(chunk_id=curr_chunk_id, im_id=curr_frame_id, im_type='.png')
+                    cv2.imwrite(rgb_fpath, color_bgr)
             else:
                 rgb_output = Utility.find_registered_output_by_key("colors")
                 if rgb_output is None:
@@ -453,7 +455,7 @@ class _BopWriterUtility:
             # Scale the depth to retain a higher precision (the depth is saved
             # as a 16-bit PNG image with range 0-65535).
             depth_mm = 1000.0 * depth  # [m] -> [mm]
-            depth_mm_scaled = depth_mm / float(depth_scale)
+            depth_mm_scaled = depth_mm / depth_scale
 
             # Save the scaled depth image.
             depth_fpath = depth_tpath.format(chunk_id=curr_chunk_id, im_id=curr_frame_id)
@@ -461,7 +463,7 @@ class _BopWriterUtility:
 
             # Save the chunk info if we are at the end of a chunk or at the last new frame.
             if ((curr_frame_id + 1) % frames_per_chunk == 0) or \
-                    (frame_id == num_new_frames - 1):
+                        (frame_id == num_new_frames - 1):
 
                 # Save GT annotations.
                 _BopWriterUtility.save_json(chunk_gt_tpath.format(chunk_id=curr_chunk_id), chunk_gt)
@@ -649,11 +651,7 @@ class _BopWriterUtility:
                     px_count_visib = visib_gt.sum()
 
                     # Visible surface fraction.
-                    if px_count_all > 0:
-                        visib_fract = px_count_visib / float(px_count_all)
-                    else:
-                        visib_fract = 0.0
-
+                    visib_fract = px_count_visib / float(px_count_all) if px_count_all > 0 else 0.0
                     # Bounding box of the whole object silhouette
                     # (including the truncated part).
                     bbox = [-1, -1, -1, -1]
@@ -704,12 +702,12 @@ class _BopWriterUtility:
             CATEGORIES = [{'id': obj.get_cp('category_id'), 'name': str(obj.get_cp('category_id')), 'supercategory':
                           dataset_name} for obj in dataset_objects]
             INFO = {
-                "description": dataset_name + '_train',
+                "description": f'{dataset_name}_train',
                 "url": "https://github.com/thodan/bop_toolkit",
                 "version": "0.1.0",
                 "year": datetime.date.today().year,
                 "contributor": "",
-                "date_created": datetime.datetime.utcnow().isoformat(' ')
+                "date_created": datetime.datetime.utcnow().isoformat(' '),
             }
 
             segmentation_id = 1

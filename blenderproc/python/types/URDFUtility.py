@@ -163,10 +163,11 @@ class URDFObject(Entity):
         """
 
         bpy.context.view_layer.update()
-        matrices = []
-        for link in self.links:
-            if link.bone is not None:
-                matrices.append(Matrix(self.get_local2world_mat()) @ link.bone.matrix)
+        matrices = [
+            Matrix(self.get_local2world_mat()) @ link.bone.matrix
+            for link in self.links
+            if link.bone is not None
+        ]
         return np.stack(matrices)
 
     def get_all_visual_local2world_mats(self) -> np.array:

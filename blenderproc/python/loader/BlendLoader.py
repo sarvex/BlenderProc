@@ -44,19 +44,18 @@ def load_blend(path: str, obj_types: Optional[Union[List[str], str]] = None, nam
     # Start importing blend file. All objects that should be imported need to be copied from "data_from" to "data_to"
     with bpy.data.libraries.load(path, link=link) as (data_from, data_to):
         for data_block in data_blocks:
-            # Verify that the given data block is valid
-            if hasattr(data_from, data_block):
-                # Find all entities of this data block that match the specified pattern
-                data_to_entities = []
-                for entity_name in getattr(data_from, data_block):
-                    if not name_regrex or re.fullmatch(name_regrex, entity_name) is not None:
-                        data_to_entities.append(entity_name)
-                # Import them
-                setattr(data_to, data_block, data_to_entities)
-                print("Imported " + str(len(data_to_entities)) + " " + data_block)
-            else:
-                raise Exception("No such data block: " + data_block)
+            if not hasattr(data_from, data_block):
+                raise Exception(f"No such data block: {data_block}")
 
+            data_to_entities = [
+                entity_name
+                for entity_name in getattr(data_from, data_block)
+                if not name_regrex
+                or re.fullmatch(name_regrex, entity_name) is not None
+            ]
+            # Import them
+            setattr(data_to, data_block, data_to_entities)
+            print(f"Imported {len(data_to_entities)} {data_block}")
     # Go over all imported objects again
     loaded_objects: List[Entity] = []
     for data_block in data_blocks:
@@ -88,7 +87,7 @@ def load_blend(path: str, obj_types: Optional[Union[List[str], str]] = None, nam
                 else:
                     # Remove object again if its type is not desired
                     bpy.data.objects.remove(obj, do_unlink=True)
-            print("Selected " + str(len(loaded_objects)) + " of the loaded objects by type")
+            print(f"Selected {len(loaded_objects)} of the loaded objects by type")
         else:
             loaded_objects.extend(getattr(data_to, data_block))
 
@@ -123,7 +122,7 @@ class _BlendLoader:
         # Check that the given elements are valid
         for element in config_value:
             if element not in allowed_elements:
-                raise Exception("No such " + element_name + ": " + element)
+                raise Exception(f"No such {element_name}: {element}")
 
         return config_value
 

@@ -111,19 +111,18 @@ class AttributeMerger(Provider):
             else:
                 raw_result.append(element_conf.get_raw_value("element"))
 
-        if len(raw_result) > 0:
-            if self._check_compatibility(raw_result):
-                if transform_by == "sum":
-                    ref_result = self._sum(raw_result)
-                elif transform_by == "avg":
-                    ref_result = self._avg(raw_result)
-                else:
-                    raise RuntimeError("Unknown 'transform_by' operation: " + transform_by)
-            else:
-                raise RuntimeError("Provider output types don't match. All must either int, float, or mathutils.Vector.")
-        else:
+        if not raw_result:
             raise RuntimeError("List of resulting values of `elements` is empty. Please, check Provider configuration.")
 
+        if self._check_compatibility(raw_result):
+            if transform_by == "sum":
+                ref_result = self._sum(raw_result)
+            elif transform_by == "avg":
+                ref_result = self._avg(raw_result)
+            else:
+                raise RuntimeError(f"Unknown 'transform_by' operation: {transform_by}")
+        else:
+            raise RuntimeError("Provider output types don't match. All must either int, float, or mathutils.Vector.")
         return ref_result
 
     @staticmethod

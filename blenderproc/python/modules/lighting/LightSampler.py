@@ -25,6 +25,6 @@ class LightSampler(LightInterface):
     def run(self):
         """ Sets light sources. """
         source_specs = self.config.get_list("lights", [])
-        for i, source_spec in enumerate(source_specs):
+        for source_spec in source_specs:
             # Add new light source based on the sampled settings
             self.light_source_collection.add_item(source_spec)

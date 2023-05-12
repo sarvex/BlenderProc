@@ -179,7 +179,9 @@ class _PhysicsSimulation:
         # Run simulation starting from min to max in the configured steps
         for current_time in np.arange(min_simulation_time, max_simulation_time, check_object_interval):
             current_frame = _PhysicsSimulation.seconds_to_frames(current_time)
-            print("Running simulation up to " + str(current_time) + " seconds (" + str(current_frame) + " frames)")
+            print(
+                f"Running simulation up to {str(current_time)} seconds ({str(current_frame)} frames)"
+            )
 
             # Simulate current interval
             point_cache.frame_end = current_frame
@@ -197,8 +199,9 @@ class _PhysicsSimulation:
             # If objects have stopped moving between the last two frames, then stop here
             if _PhysicsSimulation.have_objects_stopped_moving(old_poses, new_poses, object_stopped_location_threshold,
                                                               object_stopped_rotation_threshold):
-                print("Objects have stopped moving after " + str(current_time) + "  seconds (" + str(
-                    current_frame) + " frames)")
+                print(
+                    f"Objects have stopped moving after {str(current_time)}  seconds ({str(current_frame)} frames)"
+                )
                 break
             if current_time + check_object_interval >= max_simulation_time:
                 print("Stopping simulation as configured max_simulation_time has been reached")
@@ -220,7 +223,7 @@ class _PhysicsSimulation:
             if obj.rigid_body.type == 'ACTIVE':
                 location = bpy.context.scene.objects[obj.name].matrix_world.translation.copy()
                 rotation = mathutils.Vector(bpy.context.scene.objects[obj.name].matrix_world.to_euler())
-                objects_poses.update({obj.name: {'location': location, 'rotation': rotation}})
+                objects_poses[obj.name] = {'location': location, 'rotation': rotation}
 
         return objects_poses
 
@@ -243,11 +246,17 @@ class _PhysicsSimulation:
         for obj_name in last_poses:
             # Check location difference
             location_diff = last_poses[obj_name]['location'] - new_poses[obj_name]['location']
-            stopped = stopped and not any(location_diff[i] > object_stopped_location_threshold for i in range(3))
+            stopped = stopped and all(
+                location_diff[i] <= object_stopped_location_threshold
+                for i in range(3)
+            )
 
             # Check rotation difference
             rotation_diff = last_poses[obj_name]['rotation'] - new_poses[obj_name]['rotation']
-            stopped = stopped and not any(rotation_diff[i] > object_stopped_rotation_threshold for i in range(3))
+            stopped = stopped and all(
+                rotation_diff[i] <= object_stopped_rotation_threshold
+                for i in range(3)
+            )
 
             if not stopped:
                 break

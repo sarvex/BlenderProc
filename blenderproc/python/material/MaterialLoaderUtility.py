@@ -58,8 +58,7 @@ def find_cc_material_by_name(material_name: str, custom_properties: Dict[str, An
         cond[key] = value
     new_mats = MaterialGetter.perform_and_condition_check(cond, [])
     if len(new_mats) == 1:
-        new_mat = new_mats[0]
-        return new_mat
+        return new_mats[0]
     if len(new_mats) > 1:
         raise RuntimeError("There was more than one material found!")
     # the material was not even loaded
@@ -364,7 +363,7 @@ def connect_uv_maps(nodes: bpy.types.Nodes, links: bpy.types.NodeLinks, collecti
     :param links: Links from the current material
     :param collection_of_texture_nodes: List of :class: `bpy.type.Node` of type :class: `ShaderNodeTexImage`
     """
-    if len(collection_of_texture_nodes) > 0:
+    if collection_of_texture_nodes:
         texture_coords = nodes.new("ShaderNodeTexCoord")
         texture_coords.location.x = _x_texture_node * 1.4
         mapping_node = nodes.new("ShaderNodeMapping")
@@ -405,9 +404,8 @@ def add_alpha_channel_to_textures(blurry_edges):
             # check each node of the material
             for node in material.node_tree.nodes:
                 # if it is a texture image node
-                if 'TexImage' in node.bl_idname:
-                    if '.png' in node.image.name:  # contains an alpha channel
-                        texture_node = node
+                if 'TexImage' in node.bl_idname and '.png' in node.image.name:
+                    texture_node = node
             # this material contains an alpha png texture
             if texture_node is not None:
                 nodes = material.node_tree.nodes
@@ -415,28 +413,27 @@ def add_alpha_channel_to_textures(blurry_edges):
                 node_connected_to_the_output, material_output = \
                     Utility.get_node_connected_to_the_output_and_unlink_it(material)
 
-                if node_connected_to_the_output is not None:
-                    mix_node = nodes.new(type='ShaderNodeMixShader')
-
-                    # avoid blurry edges on the edges important for Normal, SegMapRenderer and others
-                    if blurry_edges:
-                        # add the alpha channel of the image to the mix shader node as a factor
-                        links.new(texture_node.outputs['Alpha'], mix_node.inputs['Fac'])
-                    else:
-                        # Map all alpha values to 0 or 1 by applying the step function: 1 if x > 0.5 else 0
-                        step_function_node = nodes.new("ShaderNodeMath")
-                        step_function_node.operation = "GREATER_THAN"
-                        links.new(texture_node.outputs['Alpha'], step_function_node.inputs['Value'])
-                        links.new(step_function_node.outputs['Value'], mix_node.inputs['Fac'])
-
-                    links.new(node_connected_to_the_output.outputs[0], mix_node.inputs[2])
-                    transparent_node = nodes.new(type='ShaderNodeBsdfTransparent')
-                    links.new(transparent_node.outputs['BSDF'], mix_node.inputs[1])
-                    # connect to material output
-                    links.new(mix_node.outputs['Shader'], material_output.inputs['Surface'])
-                else:
+                if node_connected_to_the_output is None:
                     raise RuntimeError(f"Could not find shader node, which is connected to the material "
                                        f"output for: {slot.name}")
+                mix_node = nodes.new(type='ShaderNodeMixShader')
+
+                # avoid blurry edges on the edges important for Normal, SegMapRenderer and others
+                if blurry_edges:
+                    # add the alpha channel of the image to the mix shader node as a factor
+                    links.new(texture_node.outputs['Alpha'], mix_node.inputs['Fac'])
+                else:
+                    # Map all alpha values to 0 or 1 by applying the step function: 1 if x > 0.5 else 0
+                    step_function_node = nodes.new("ShaderNodeMath")
+                    step_function_node.operation = "GREATER_THAN"
+                    links.new(texture_node.outputs['Alpha'], step_function_node.inputs['Value'])
+                    links.new(step_function_node.outputs['Value'], mix_node.inputs['Fac'])
+
+                links.new(node_connected_to_the_output.outputs[0], mix_node.inputs[2])
+                transparent_node = nodes.new(type='ShaderNodeBsdfTransparent')
+                links.new(transparent_node.outputs['BSDF'], mix_node.inputs[1])
+                # connect to material output
+                links.new(mix_node.outputs['Shader'], material_output.inputs['Surface'])
 
 
 def add_alpha_texture_node(used_material, new_material):
@@ -455,9 +452,8 @@ def add_alpha_texture_node(used_material, new_material):
     texture_node = None
     for node in used_material.node_tree.nodes:
         # if it is a texture image node
-        if 'TexImage' in node.bl_idname:
-            if '.png' in node.image.name:  # contains an alpha channel
-                texture_node = node
+        if 'TexImage' in node.bl_idname and '.png' in node.image.name:
+            texture_node = node
     # this material contains an alpha png texture
     if texture_node is not None:
         new_mat_alpha = new_material.copy()  # copy the material
@@ -488,14 +484,10 @@ def change_to_texture_less_render(use_alpha_channel):
     for used_object in [obj for obj in bpy.context.scene.objects if hasattr(obj.data, 'materials')]:
         # replace all materials with the new texture less material
         for slot in used_object.material_slots:
-            emission_shader = False
-            # check if the material contains an emission shader:
-            for node in slot.material.node_tree.nodes:
-                # check if one of the shader nodes is a Emission Shader
-                if 'Emission' in node.bl_idname:
-                    emission_shader = True
-                    break
-            # only replace materials, which do not contain any emission shader
+            emission_shader = any(
+                'Emission' in node.bl_idname
+                for node in slot.material.node_tree.nodes
+            )
             if not emission_shader:
                 if use_alpha_channel:
                     slot.material = add_alpha_texture_node(slot.material, new_mat)

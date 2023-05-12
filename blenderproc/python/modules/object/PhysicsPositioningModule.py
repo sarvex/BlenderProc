@@ -127,10 +127,7 @@ class PhysicsPositioningModule(Module):
 
         # Temporary function which returns either the value set in the custom properties (if set) or the fallback value.
         def get_physics_attribute(obj, cp_name, default_value):
-            if cp_name in obj:
-                return obj[cp_name]
-            else:
-                return default_value
+            return obj[cp_name] if cp_name in obj else default_value
 
         # Go over all mesh objects and set their physics attributes based on the custom properties or (if not set) based on the module config
         for obj in get_all_blender_mesh_objects():

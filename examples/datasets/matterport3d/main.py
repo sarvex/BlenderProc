@@ -20,7 +20,7 @@ objects, floor = bproc.loader.load_matterport3d(args.matterport3d_data)
 bvh_tree = bproc.object.create_bvh_tree_multi_objects([objects, floor])
 
 poses = 0
-for try_counter in range(10000):
+for _ in range(10000):
     location = bproc.sampler.upper_region([floor], min_height=1.5, max_height=1.8)
     # Check that there is no object between the sampled point and the floor
     _, _, _, _, hit_object, _ = bproc.object.scene_ray_cast(location, [0, 0, -1])

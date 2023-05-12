@@ -16,7 +16,7 @@ objs = bproc.loader.load_obj(args.scene)
 # Find point of interest, all cam poses should look towards it
 poi = bproc.object.compute_poi(objs)
 # Sample five camera poses
-for i in range(3):
+for _ in range(3):
     # Sample random camera location above objects
     location = np.random.uniform([-10, -10, 8], [10, 10, 12])
     # Compute rotation based on vector going from location towards poi

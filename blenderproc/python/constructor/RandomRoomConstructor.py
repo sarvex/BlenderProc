@@ -50,14 +50,12 @@ def construct_random_room(used_floor_area: float, interior_objects: List[MeshObj
     amount_of_extrusions += 1
 
     bvh_cache_for_intersection: Dict[str, mathutils.bvhtree.BVHTree] = {}
-    placed_objects = []
-
     # construct a random room
     floor_obj, wall_obj, ceiling_obj = _construct_random_room(used_floor_area, amount_of_extrusions,
                                                              fac_from_square_room, corridor_width,
                                                              wall_height, amount_of_floor_cuts,
                                                              only_use_big_edges, create_ceiling)
-    placed_objects.append(wall_obj)
+    placed_objects = [wall_obj]
     if ceiling_obj is not None:
         placed_objects.append(ceiling_obj)
 
@@ -115,10 +113,13 @@ def construct_random_room(used_floor_area: float, interior_objects: List[MeshObj
                 current_accumulated_face_size += face_size
                 if current_accumulated_face_size > step_size:
                     for _ in range(placement_tries_per_face):
-                        found_spot = _sample_new_object_poses_on_face(current_obj, face_bb,
-                                                                     bvh_cache_for_intersection,
-                                                                     placed_objects, wall_obj)
-                        if found_spot:
+                        if found_spot := _sample_new_object_poses_on_face(
+                            current_obj,
+                            face_bb,
+                            bvh_cache_for_intersection,
+                            placed_objects,
+                            wall_obj,
+                        ):
                             placed_objects.append(current_obj)
                             current_obj = current_obj.duplicate()
                             is_duplicated = True
@@ -129,10 +130,13 @@ def construct_random_room(used_floor_area: float, interior_objects: List[MeshObj
                 amount_of_steps = int((face_size + current_accumulated_face_size) / step_size)
                 for _ in range(amount_of_steps):
                     for _ in range(placement_tries_per_face):
-                        found_spot = _sample_new_object_poses_on_face(current_obj, face_bb,
-                                                                     bvh_cache_for_intersection,
-                                                                     placed_objects, wall_obj)
-                        if found_spot:
+                        if found_spot := _sample_new_object_poses_on_face(
+                            current_obj,
+                            face_bb,
+                            bvh_cache_for_intersection,
+                            placed_objects,
+                            wall_obj,
+                        ):
                             placed_objects.append(current_obj)
                             current_obj = current_obj.duplicate()
                             is_duplicated = True
@@ -279,15 +283,10 @@ def _construct_random_room(used_floor_area: float, amount_of_extrusions: int, fa
         boundary_sizes = [(e, e.calc_length()) for e in boundary_edges]
         boundary_sizes = [(e, s) for e, s in boundary_sizes if s > corridor_width]
 
-        if len(boundary_sizes) > 0:
+        if boundary_sizes:
             # sort the boundaries to focus only on the big ones
             boundary_sizes.sort(key=lambda e: e[1])
-            if only_use_big_edges:
-                # only select the bigger half of the selected boundaries
-                half_size = len(boundary_sizes) // 2
-            else:
-                # use any of the selected boundaries
-                half_size = 0
+            half_size = len(boundary_sizes) // 2 if only_use_big_edges else 0
             used_edges = [e for e, s in boundary_sizes[half_size:]]
 
             random_edge = None
@@ -304,10 +303,7 @@ def _construct_random_room(used_floor_area: float, amount_of_extrusions: int, fa
 
                 # depending if the random edge is aligned with the x-axis or the y-axis,
                 # the shift is the opposite direction
-                if direction[0] == 0:
-                    x_shift, y_shift = shift_value, 0
-                else:
-                    x_shift, y_shift = 0, shift_value
+                x_shift, y_shift = (shift_value, 0) if direction[0] == 0 else (0, shift_value)
                 # calculate the vertices for the new face
                 shift_vec = mathutils.Vector([x_shift, y_shift, 0])
                 dir_found = False
@@ -523,9 +519,9 @@ def _sample_new_object_poses_on_face(current_obj: MeshObject, face_bb, bvh_cache
     if current_obj.get_name() in bvh_cache_for_intersection:
         del bvh_cache_for_intersection[current_obj.get_name()]
 
-    # perform check if object can be placed there
-    no_collision = CollisionUtility.check_intersections(current_obj,
-                                                        bvh_cache=bvh_cache_for_intersection,
-                                                        objects_to_check_against=placed_objects,
-                                                        list_of_objects_with_no_inside_check=[wall_obj])
-    return no_collision
+    return CollisionUtility.check_intersections(
+        current_obj,
+        bvh_cache=bvh_cache_for_intersection,
+        objects_to_check_against=placed_objects,
+        list_of_objects_with_no_inside_check=[wall_obj],
+    )

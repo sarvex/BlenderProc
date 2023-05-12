@@ -37,5 +37,5 @@ class Pipeline:
         """ Runs each module and measuring their execution time. """
         with BlockStopWatch("Running blender pipeline"):
             for module in self.modules:
-                with BlockStopWatch("Running module " + module.__class__.__name__):
+                with BlockStopWatch(f"Running module {module.__class__.__name__}"):
                     module.run()

@@ -127,7 +127,7 @@ class RandomRoomConstructorModule(Module):
         module_list_config = self.config.get_list("used_loader_config")
         modules = Utility.initialize_modules(module_list_config)
         for module in modules:
-            print("Running module " + module.__class__.__name__)
+            print(f"Running module {module.__class__.__name__}")
             module.run()
         bpy.ops.object.select_all(action='SELECT')
         loaded_objects = list(set(bpy.context.selected_objects) - previously_selected_objects)

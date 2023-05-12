@@ -152,20 +152,20 @@ class Attribute(Provider):
                 bb_mean = np.mean(MeshObject(obj).get_bound_box(), axis=0)
                 raw_result.append(mathutils.Vector(bb_mean))
             else:
-                raise RuntimeError("Unknown parameter name: " + look_for)
+                raise RuntimeError(f"Unknown parameter name: {look_for}")
 
         if self.config.has_param("transform_by"):
             transform_by = self.config.get_string("transform_by")
-            if self._check_compatibility(raw_result):
-                if transform_by == "sum":
-                    ref_result = self._sum(raw_result)
-                elif transform_by == "avg":
-                    ref_result = self._avg(raw_result)
-                else:
-                    raise RuntimeError("Unknown transform_by: " + transform_by)
+            if not self._check_compatibility(raw_result):
+                raise RuntimeError(
+                    f"Performing {str(transform_by)} on {str(look_for)} {str(type(raw_result[0]))} type is not allowed!"
+                )
+            if transform_by == "sum":
+                ref_result = self._sum(raw_result)
+            elif transform_by == "avg":
+                ref_result = self._avg(raw_result)
             else:
-                raise RuntimeError("Performing " + str(transform_by) + " on " + str(look_for) + " " +
-                                   str(type(raw_result[0])) + " type is not allowed!")
+                raise RuntimeError(f"Unknown transform_by: {transform_by}")
             result = ref_result
         else:
             result = raw_result

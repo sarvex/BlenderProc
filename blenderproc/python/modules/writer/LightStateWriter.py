@@ -15,11 +15,11 @@ class LightStateWriter(WriterInterface):
 
     def run(self):
         """ Collection all lights and writes them to a numpy file if no hdf5 file was available"""
-        lights = []
-        for object in bpy.context.scene.objects:
-            if object.type == 'LIGHT':
-                lights.append(object)
-
+        lights = [
+            object
+            for object in bpy.context.scene.objects
+            if object.type == 'LIGHT'
+        ]
         self.write_attributes_to_file(self.light_writer, lights, "light_states_", "light_states",
                                       ["location", "rotation_euler", "energy"])
 

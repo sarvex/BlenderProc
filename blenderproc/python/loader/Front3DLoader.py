@@ -138,12 +138,15 @@ class _Front3DLoader:
         :param json_path: Path to the json file, where the house information is stored.
         :return: The list of loaded mesh objects.
         """
-        # extract all used materials -> there are more materials defined than used
-        used_materials = []
-        for mat in data["material"]:
-            used_materials.append({"uid": mat["uid"], "texture": mat["texture"],
-                                   "normaltexture": mat["normaltexture"], "color": mat["color"]})
-
+        used_materials = [
+            {
+                "uid": mat["uid"],
+                "texture": mat["texture"],
+                "normaltexture": mat["normaltexture"],
+                "color": mat["color"],
+            }
+            for mat in data["material"]
+        ]
         created_objects = []
         # maps loaded images from image file path to bpy.type.image
         saved_images = {}
@@ -161,7 +164,7 @@ class _Front3DLoader:
                 warnings.warn(f"Material is not defined for {used_obj_name} in this file: {json_path}")
                 continue
             # create a new mesh
-            obj = create_with_empty_mesh(used_obj_name, used_obj_name + "_mesh")
+            obj = create_with_empty_mesh(used_obj_name, f"{used_obj_name}_mesh")
             created_objects.append(obj)
 
             # set two custom properties, first that it is a 3D_future object and second the category_id
@@ -170,14 +173,10 @@ class _Front3DLoader:
 
             # get the material uid of the current mesh data
             current_mat = mesh_data["material"]
-            used_mat = None
-            # search in the used materials after this uid
-            for u_mat in used_materials:
-                if u_mat["uid"] == current_mat:
-                    used_mat = u_mat
-                    break
-            # If there should be a material used
-            if used_mat:
+            if used_mat := next(
+                (u_mat for u_mat in used_materials if u_mat["uid"] == current_mat),
+                None,
+            ):
                 if used_mat["texture"]:
                     # extract the has folder is from the url and download it if necessary
                     hash_folder = _Front3DLoader.extract_hash_nr_for_texture(used_mat["texture"], front_3D_texture_path)
@@ -186,7 +185,7 @@ class _Front3DLoader:
                         obj.add_material(mat)
                     else:
                         # Create a new material
-                        mat = MaterialLoaderUtility.create(name=used_obj_name + "_material")
+                        mat = MaterialLoaderUtility.create(name=f"{used_obj_name}_material")
                         principled_node = mat.get_the_one_node_with_type("BsdfPrincipled")
                         if used_mat["color"]:
                             principled_node.inputs["Base Color"].default_value = mathutils.Vector(
@@ -216,14 +215,13 @@ class _Front3DLoader:
 
                         obj.add_material(mat)
                         used_materials_based_on_texture[hash_folder] = mat
-                # if there is a normal color used
                 elif used_mat["color"]:
                     used_hash = tuple(used_mat["color"])
                     if used_hash in used_materials_based_on_color and "ceiling" not in used_obj_name.lower():
                         mat = used_materials_based_on_color[used_hash]
                     else:
                         # Create a new material
-                        mat = MaterialLoaderUtility.create(name=used_obj_name + "_material")
+                        mat = MaterialLoaderUtility.create(name=f"{used_obj_name}_material")
                         # create a principled node and set the default color
                         principled_node = mat.get_the_one_node_with_type("BsdfPrincipled")
                         principled_node.inputs["Base Color"].default_value = mathutils.Vector(used_mat["color"]) / 255.0
@@ -245,7 +243,7 @@ class _Front3DLoader:
             normal = [float(ele) for ele in mesh_data["normal"]]
 
             # map those to the blender coordinate system
-            num_vertices = int(len(vert) / 3)
+            num_vertices = len(vert) // 3
             vertices = np.reshape(np.array(vert), [num_vertices, 3])
             normal = np.reshape(np.array(normal), [num_vertices, 3])
             # flip the first and second value
@@ -267,7 +265,7 @@ class _Front3DLoader:
             mesh.loops.foreach_set("vertex_index", faces)
 
             # the loops are set based on how the faces are a ranged
-            num_loops = int(num_vertex_indicies / 3)
+            num_loops = num_vertex_indicies // 3
             mesh.polygons.add(num_loops)
             # always 3 vertices form one triangle
             loop_start = np.arange(0, num_vertex_indicies, 3)
@@ -276,10 +274,9 @@ class _Front3DLoader:
             mesh.polygons.foreach_set("loop_start", loop_start)
             mesh.polygons.foreach_set("loop_total", loop_total)
 
-            # the uv coordinates are reshaped then the face coords are extracted
-            uv_mesh_data = [float(ele) for ele in mesh_data["uv"] if ele is not None]
-            # bb1737bf-dae6-4215-bccf-fab6f584046b.json includes one mesh which only has no UV mapping
-            if uv_mesh_data:
+            if uv_mesh_data := [
+                float(ele) for ele in mesh_data["uv"] if ele is not None
+            ]:
                 uv = np.reshape(np.array(uv_mesh_data), [num_vertices, 2])
                 used_uvs = uv[faces, :]
                 # and again reshaped back to the long list
@@ -293,12 +290,12 @@ class _Front3DLoader:
             # this update converts the upper data into a mesh
             mesh.update()
 
-            # the generation might fail if the data does not line up
-            # this is not used as even if the data does not line up it is still able to render the objects
-            # We assume that not all meshes in the dataset do conform with the mesh standards set in blender
-            # result = mesh.validate(verbose=False)
-            # if result:
-            #    raise Exception("The generation of the mesh: {} failed!".format(used_obj_name))
+                # the generation might fail if the data does not line up
+                # this is not used as even if the data does not line up it is still able to render the objects
+                # We assume that not all meshes in the dataset do conform with the mesh standards set in blender
+                # result = mesh.validate(verbose=False)
+                # if result:
+                #    raise Exception("The generation of the mesh: {} failed!".format(used_obj_name))
 
         return created_objects
 
@@ -324,7 +321,10 @@ class _Front3DLoader:
             obj_file = os.path.join(folder_path, "raw_model.obj")
             # if the object exists load it -> a lot of object do not exist
             # we are unsure why this is -> we assume that not all objects have been made public
-            if os.path.exists(obj_file) and not "7e101ef3-7722-4af8-90d5-7c562834fabd" in obj_file:
+            if (
+                os.path.exists(obj_file)
+                and "7e101ef3-7722-4af8-90d5-7c562834fabd" not in obj_file
+            ):
                 # load all objects from this .obj file
                 objs = load_obj(filepath=obj_file)
                 # extract the name, which serves as category id
@@ -353,9 +353,11 @@ class _Front3DLoader:
                         if mat is None:
                             continue
                         principled_node = mat.get_nodes_with_type("BsdfPrincipled")
-                        if "bed" in used_obj_name.lower() or "sofa" in used_obj_name.lower():
-                            if len(principled_node) == 1:
-                                principled_node[0].inputs["Roughness"].default_value = 0.5
+                        if (
+                            "bed" in used_obj_name.lower()
+                            or "sofa" in used_obj_name.lower()
+                        ) and len(principled_node) == 1:
+                            principled_node[0].inputs["Roughness"].default_value = 0.5
                         is_lamp = "lamp" in used_obj_name.lower()
                         if len(principled_node) == 0 and is_lamp:
                             # this material has already been transformed
@@ -408,11 +410,7 @@ class _Front3DLoader:
                     for obj in all_loaded_furniture:
                         if obj.get_cp("uid") == child["ref"]:
                             # if the object was used before, duplicate the object and move that duplicated obj
-                            if obj.get_cp("is_used"):
-                                new_obj = obj.duplicate()
-                            else:
-                                # if it is the first time use the object directly
-                                new_obj = obj
+                            new_obj = obj.duplicate() if obj.get_cp("is_used") else obj
                             created_objects.append(new_obj)
                             new_obj.set_cp("is_used", True)
                             new_obj.set_cp("room_id", room_id)

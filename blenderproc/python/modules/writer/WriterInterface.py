@@ -103,8 +103,10 @@ class WriterInterface(Module):
         data = _WriterUtility.load_output_file(resolve_path(file_path), self.write_alpha_channel, remove=False)
         data, new_key, new_version = self._apply_postprocessing(key, data, version)
         if isinstance(data, np.ndarray):
-            print("Key: " + key + " - shape: " + str(data.shape) + " - dtype: " + str(data.dtype) + " - path: " + file_path)
+            print(
+                f"Key: {key} - shape: {str(data.shape)} - dtype: {str(data.dtype)} - path: {file_path}"
+            )
         else:
-            print("Key: " + key + " - path: " + file_path)
+            print(f"Key: {key} - path: {file_path}")
         return data, new_key, new_version
 

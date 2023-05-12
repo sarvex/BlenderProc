@@ -28,9 +28,7 @@ def add_camera_pose(cam2world_matrix: Union[np.ndarray, Matrix], frame: Optional
     # Add new frame if no frame is given
     if frame is None:
         frame = bpy.context.scene.frame_end
-    if bpy.context.scene.frame_end < frame + 1:
-        bpy.context.scene.frame_end = frame + 1
-
+    bpy.context.scene.frame_end = max(bpy.context.scene.frame_end, frame + 1)
     # Persist camera pose
     cam_ob.keyframe_insert(data_path='location', frame=frame)
     cam_ob.keyframe_insert(data_path='rotation_euler', frame=frame)
@@ -98,7 +96,7 @@ def is_point_inside_camera_frustum(point: Union[List[float], Vector, np.ndarray]
     point4d /= point4d[3]
     point4d = point4d[:3]
 
-    return np.all([point4d < 1, -1 < point4d])
+    return np.all([point4d < 1, point4d > -1])
 
 
 def get_camera_frustum_as_object(clip_start: Optional[float] = None, clip_end: Optional[float] = None,
@@ -173,12 +171,14 @@ def set_intrinsics_from_blender_params(lens: float = None, image_width: int = No
         # Set focal length
         if cam.lens_unit == 'MILLIMETERS':
             if lens < 1:
-                raise Exception("The focal length is smaller than 1mm which is not allowed in blender: " + str(lens))
+                raise Exception(
+                    f"The focal length is smaller than 1mm which is not allowed in blender: {lens}"
+                )
             cam.lens = lens
         elif cam.lens_unit == "FOV":
             cam.angle = lens
         else:
-            raise Exception("No such lens unit: " + lens_unit)
+            raise Exception(f"No such lens unit: {lens_unit}")
 
     # Set resolution
     if image_width is not None:
@@ -282,11 +282,7 @@ def get_sensor_size(cam: bpy.types.Camera) -> float:
     :param cam: The camera object.
     :return: The sensor size in millimeters.
     """
-    if cam.sensor_fit == 'VERTICAL':
-        sensor_size_in_mm = cam.sensor_height
-    else:
-        sensor_size_in_mm = cam.sensor_width
-    return sensor_size_in_mm
+    return cam.sensor_height if cam.sensor_fit == 'VERTICAL' else cam.sensor_width
 
 
 def get_view_fac_in_px(cam: bpy.types.Camera, pixel_aspect_x: float, pixel_aspect_y: float,
@@ -311,12 +307,11 @@ def get_view_fac_in_px(cam: bpy.types.Camera, pixel_aspect_x: float, pixel_aspec
 
     # Based on the sensor fit mode, determine the view in pixels
     pixel_aspect_ratio = pixel_aspect_y / pixel_aspect_x
-    if sensor_fit == 'HORIZONTAL':
-        view_fac_in_px = resolution_x_in_px
-    else:
-        view_fac_in_px = pixel_aspect_ratio * resolution_y_in_px
-
-    return view_fac_in_px
+    return (
+        resolution_x_in_px
+        if sensor_fit == 'HORIZONTAL'
+        else pixel_aspect_ratio * resolution_y_in_px
+    )
 
 
 def get_projection_matrix(clip_start: Optional[float] = None, clip_end: Optional[float] = None) -> np.ndarray:
@@ -331,10 +326,7 @@ def get_projection_matrix(clip_start: Optional[float] = None, clip_end: Optional
         near = bpy.context.scene.camera.data.clip_start
     else:
         near = clip_start
-    if clip_end is None:
-        far = bpy.context.scene.camera.data.clip_end
-    else:
-        far = clip_end
+    far = bpy.context.scene.camera.data.clip_end if clip_end is None else clip_end
     # get the field of view
     x_fov, y_fov = get_fov()
     # convert them to height and width values
@@ -373,11 +365,7 @@ def get_intrinsics_as_K_matrix() -> np.ndarray:
     cx = (resolution_x_in_px - 1) / 2 - cam.shift_x * view_fac_in_px
     cy = (resolution_y_in_px - 1) / 2 + cam.shift_y * view_fac_in_px / pixel_aspect_ratio
 
-    # Build K matrix
-    K = np.array([[fx, 0, cx],
-                  [0, fy, cy],
-                  [0, 0, 1]])
-    return K
+    return np.array([[fx, 0, cx], [0, fy, cy], [0, 0, 1]])
 
 
 def get_fov() -> Tuple[float, float]:

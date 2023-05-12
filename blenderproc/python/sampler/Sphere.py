@@ -39,18 +39,14 @@ def sphere(center: Union[Vector, np.ndarray, list], radius: float, mode: str) ->
     norm = np.sqrt(direction.dot(direction))
 
     # If sampling from the surface set magnitude to radius of the sphere
-    if mode == "SURFACE":
-        magnitude = radius
-    # If sampling from the interior set it to scaled radius
-    elif mode == "INTERIOR":
+    if mode == "INTERIOR":
         magnitude = radius * np.cbrt(np.random.uniform())
+    elif mode == "SURFACE":
+        magnitude = radius
     else:
-        raise Exception("Unknown sampling mode: " + mode)
+        raise Exception(f"Unknown sampling mode: {mode}")
 
     # Normalize
     sampled_point = list(map(lambda x: magnitude * x / norm, direction))
 
-    # Add center
-    location = np.array(sampled_point) + center
-
-    return location
+    return np.array(sampled_point) + center

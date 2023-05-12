@@ -187,19 +187,19 @@ class MeshObject(Entity):
         """
         context = {"selected_editable_objects": [self.blender_obj]}
 
-        if mode == "POINT":
+        if mode == "CENTER_OF_MASS":
+            bpy.ops.object.origin_set(context, type='ORIGIN_CENTER_OF_MASS')
+        elif mode == "CENTER_OF_VOLUME":
+            bpy.ops.object.origin_set(context, type='ORIGIN_CENTER_OF_VOLUME')
+        elif mode == "POINT":
             if point is None:
                 raise Exception("The parameter point is not given even though the mode is set to POINT.")
             prev_cursor_location = bpy.context.scene.cursor.location.copy()
             bpy.context.scene.cursor.location = point
             bpy.ops.object.origin_set(context, type='ORIGIN_CURSOR')
             bpy.context.scene.cursor.location = prev_cursor_location.copy()
-        elif mode == "CENTER_OF_MASS":
-            bpy.ops.object.origin_set(context, type='ORIGIN_CENTER_OF_MASS')
-        elif mode == "CENTER_OF_VOLUME":
-            bpy.ops.object.origin_set(context, type='ORIGIN_CENTER_OF_VOLUME')
         else:
-            raise Exception("No such mode: " + mode)
+            raise Exception(f"No such mode: {mode}")
 
         return self.get_origin()
 
@@ -330,10 +330,10 @@ class MeshObject(Entity):
         if return_copy:
             bm = bmesh.new()
             bm.from_mesh(self.get_mesh())
-        else:
-            if bpy.context.mode != "EDIT_MESH":
-                raise Exception(f"The object: {self.get_name()} is not in EDIT mode before calling mesh_as_bmesh()")
+        elif bpy.context.mode == "EDIT_MESH":
             bm = bmesh.from_edit_mesh(self.get_mesh())
+        else:
+            raise Exception(f"The object: {self.get_name()} is not in EDIT mode before calling mesh_as_bmesh()")
         return bm
 
     def update_from_bmesh(self, bm: bmesh.types.BMesh, free_bm_mesh=True) -> bmesh.types.BMesh:
@@ -503,7 +503,7 @@ class MeshObject(Entity):
         :param subdiv_level:  Numbers of Subdivisions to perform when rendering. Parameter of Subdivision modifier.
         """
         # Add a subdivision modifier, if the mesh has too less vertices.
-        if not len(self.get_mesh().vertices) > min_vertices_for_subdiv:
+        if len(self.get_mesh().vertices) <= min_vertices_for_subdiv:
             self.add_modifier("SUBSURF", render_levels=subdiv_level)
 
         # Add the displacement modifier
@@ -555,25 +555,25 @@ def create_primitive(shape: str, **kwargs) -> "MeshObject":
                   "SPHERE", "MONKEY"]
     :return: The newly created MeshObject
     """
-    if shape == "CUBE":
+    if shape == "CONE":
+        bpy.ops.mesh.primitive_cone_add(**kwargs)
+    elif shape == "CUBE":
         bpy.ops.mesh.primitive_cube_add(**kwargs)
     elif shape == "CYLINDER":
         bpy.ops.mesh.primitive_cylinder_add(**kwargs)
-    elif shape == "CONE":
-        bpy.ops.mesh.primitive_cone_add(**kwargs)
+    elif shape == "MONKEY":
+        bpy.ops.mesh.primitive_monkey_add(**kwargs)
     elif shape == "PLANE":
         bpy.ops.mesh.primitive_plane_add(**kwargs)
     elif shape == "SPHERE":
         bpy.ops.mesh.primitive_uv_sphere_add(**kwargs)
-    elif shape == "MONKEY":
-        bpy.ops.mesh.primitive_monkey_add(**kwargs)
     else:
-        raise Exception("No such shape: " + shape)
+        raise Exception(f"No such shape: {shape}")
 
     primitive = MeshObject(bpy.context.object)
     # Blender bug: Scale is ignored by default for planes and monkeys.
     # See https://developer.blender.org/T88047
-    if 'scale' in kwargs and shape in ["MONKEY", "PLANE"]:
+    if 'scale' in kwargs and shape in {"MONKEY", "PLANE"}:
         primitive.set_scale(kwargs['scale'])
 
     return primitive
@@ -647,10 +647,9 @@ def compute_poi(objects: List[MeshObject]) -> np.ndarray:
         mean_bb_points.append(np.mean(bb_points, axis=0))
     # Query point - mean of means
     mean_bb_point = np.mean(mean_bb_points, axis=0)
-    # Closest point (from means) to query point (mean of means)
-    poi = mean_bb_points[np.argmin(np.linalg.norm(mean_bb_points - mean_bb_point, axis=1))]
-
-    return poi
+    return mean_bb_points[
+        np.argmin(np.linalg.norm(mean_bb_points - mean_bb_point, axis=1))
+    ]
 
 
 def scene_ray_cast(origin: Union[Vector, list, np.ndarray], direction: Union[Vector, list, np.ndarray],

@@ -49,7 +49,7 @@ for fname in tqdm(images):
 
 cv2.destroyAllWindows()
 
-print("Chessboard found in {} of {} images".format(success, len(images)))
+print(f"Chessboard found in {success} of {len(images)} images")
 
 """
 Performing camera calibration by 

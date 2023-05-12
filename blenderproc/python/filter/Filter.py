@@ -131,7 +131,7 @@ class _Filter:
         """
         if len(elements) > 1:
             raise Exception("More than one element with the given condition has been found.")
-        if len(elements) == 0:
+        if not elements:
             raise Exception("No element with the given condition has been found.")
         return elements[0]
 

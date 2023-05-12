@@ -34,11 +34,7 @@ def dist2depth(dist: Union[List[np.ndarray], np.ndarray]) -> Union[List[np.ndarr
     x_opt = np.abs(xs - cx)
     y_opt = np.abs(ys - cy)
 
-    # Solve 3 equations in Wolfram Alpha:
-    # Solve[{X == (x-c0)/f0*Z, Y == (y-c1)/f0*Z, X*X + Y*Y + Z*Z = d*d}, {X,Y,Z}]
-    depth = dist * f / np.sqrt(x_opt ** 2 + y_opt ** 2 + f ** 2)
-
-    return depth
+    return dist * f / np.sqrt(x_opt ** 2 + y_opt ** 2 + f ** 2)
 
 
 def depth2dist(depth: Union[List[np.ndarray], np.ndarray]) -> Union[List[np.ndarray], np.ndarray]:
@@ -63,11 +59,7 @@ def depth2dist(depth: Union[List[np.ndarray], np.ndarray]) -> Union[List[np.ndar
     x_opt = np.abs(xs - cx)
     y_opt = np.abs(ys - cy)
 
-    # Solve 3 equations in Wolfram Alpha:
-    # Solve[{X == (x-c0)/f0*Z, Y == (y-c1)/f0*Z, X*X + Y*Y + Z*Z = d*d}, {X,Y,Z}]
-    dist = depth * np.sqrt(x_opt ** 2 + y_opt ** 2 + f ** 2) / f
-
-    return dist
+    return depth * np.sqrt(x_opt ** 2 + y_opt ** 2 + f ** 2) / f
 
 
 def remove_segmap_noise(image: Union[list, np.ndarray]) -> Union[list, np.ndarray]:
@@ -255,9 +247,7 @@ def add_gaussian_shifts(image: Union[list, np.ndarray], std: float = 0.5) -> Uni
     xp_interp = np.minimum(np.maximum(xp + gaussian_shifts[:, :, 0], 0.0), cols)
     yp_interp = np.minimum(np.maximum(yp + gaussian_shifts[:, :, 1], 0.0), rows)
 
-    depth_interp = cv2.remap(image, xp_interp, yp_interp, cv2.INTER_LINEAR)
-
-    return depth_interp
+    return cv2.remap(image, xp_interp, yp_interp, cv2.INTER_LINEAR)
 
 def trim_redundant_channels(image: Union[list, np.ndarray]) -> Union[list, np.ndarray]:
     """
@@ -283,8 +273,7 @@ def trim_redundant_channels(image: Union[list, np.ndarray]) -> Union[list, np.nd
 
 def segmentation_mapping(image: Union[List[np.ndarray], np.ndarray],
                          map_by: Union[str, List[str]],
-                         default_values: Optional[Dict[str, int]]) \
-        -> Dict[str, Union[np.ndarray, List[np.ndarray], List[Dict[str, Any]]]]:
+                         default_values: Optional[Dict[str, int]]) -> Dict[str, Union[np.ndarray, List[np.ndarray], List[Dict[str, Any]]]]:
     """ Maps an image or a list of images to the desired segmentation images plus segmentation dictionary for keys,
     which can not be stored in an image (e.g. `name`).
 
@@ -330,10 +319,11 @@ def segmentation_mapping(image: Union[List[np.ndarray], np.ndarray],
 
             # map object ids in the image to the used objects
             object_ids = np.unique(stereo_image).astype(int)
-            object_ids_to_object = {}
-            for obj in get_all_blender_mesh_objects():
-                if obj.pass_index in object_ids:
-                    object_ids_to_object[obj.pass_index] = obj
+            object_ids_to_object = {
+                obj.pass_index: obj
+                for obj in get_all_blender_mesh_objects()
+                if obj.pass_index in object_ids
+            }
             object_ids_to_object[0] = bpy.context.scene.world
 
             for map_by_attribute in map_by:
@@ -358,10 +348,6 @@ def segmentation_mapping(image: Union[List[np.ndarray], np.ndarray],
                     if default_values and current_attribute in default_values:
                         default_value_set = True
                         default_value = default_values[current_attribute]
-                    elif default_values and current_attribute in default_values:
-                        default_value_set = True
-                        default_value = default_values[current_attribute]
-
                     for object_id in object_ids:
                         # get current object
                         current_obj = object_ids_to_object[object_id]
@@ -369,17 +355,15 @@ def segmentation_mapping(image: Union[List[np.ndarray], np.ndarray],
                         # if the current obj has an attribute with that name -> get it
                         if hasattr(current_obj, current_attribute):
                             value = getattr(current_obj, current_attribute)
-                        # if the current object has a custom property with that name -> get it
                         elif current_attribute in current_obj:
                             value = current_obj[current_attribute]
                         elif current_attribute.startswith("cf_"):
-                            if current_attribute == "cf_basename":
-                                value = current_obj.name
-                                if "." in value:
-                                    value = value[:value.rfind(".")]
-                            else:
+                            if current_attribute != "cf_basename":
                                 raise ValueError(f"The given attribute is a custom function: \"cf_\", but it is not "
                                                  f"defined here: {current_attribute}")
+                            value = current_obj.name
+                            if "." in value:
+                                value = value[:value.rfind(".")]
                         elif default_value_set:
                             # if none of the above applies use the default value
                             value = default_value
@@ -421,11 +405,10 @@ def segmentation_mapping(image: Union[List[np.ndarray], np.ndarray],
                 stereo_image = np.stack(list_of_stereo_images, axis=0)
                 return_dict.setdefault(key, []).append(stereo_image)
 
-        # combine non image attributes
-        mappings = []
-        for object_id, attribute_dict in non_image_attributes.items():
-            # converting to int to being able to save it to a hdf5 container
-            mappings.append({"idx": int(object_id), **attribute_dict})
+        mappings = [
+            {"idx": int(object_id), **attribute_dict}
+            for object_id, attribute_dict in non_image_attributes.items()
+        ]
         return_dict.setdefault("instance_attribute_maps", []).append(mappings)
 
     # check if only one image was provided as input
@@ -449,10 +432,11 @@ class _PostProcessingUtility:
         """
         neighbors = []
         for p in range(max(0, i - 1), min(data.shape[0], i + 2)):
-            for q in range(max(0, j - 1), min(data.shape[1], j + 2)):
-                if not (p == i and q == j):  # We don't want the current pixel, just the neighbors
-                    neighbors.append([p, q])
-
+            neighbors.extend(
+                [p, q]
+                for q in range(max(0, j - 1), min(data.shape[1], j + 2))
+                if p != i or q != j
+            )
         return np.array(neighbors)
 
     @staticmethod
@@ -470,7 +454,7 @@ class _PostProcessingUtility:
                  images of the same shape as the input image, containing the shifted images (simulating the neighbors) \
                  and the input image.
         """
-        _min = -int(filter_size / 2)
+        _min = -(filter_size // 2)
         _max = _min + filter_size
 
         rows, cols = img.shape[0], img.shape[1]
@@ -487,9 +471,7 @@ class _PostProcessingUtility:
 
                 channels.append(shifted)
 
-        if return_list:
-            return channels
-        return np.dstack(tuple(channels))
+        return channels if return_list else np.dstack(tuple(channels))
 
     @staticmethod
     def is_in(element, test_elements, assume_unique=False, invert=False):
@@ -517,6 +499,4 @@ class _PostProcessingUtility:
         hist = sorted((np.asarray((b, counts)).T), key=lambda x: x[1])
         # Assuming the stray pixels wouldn't have a count of more than 100
         noise_vals = [h[0] for h in hist if h[1] <= 100]
-        noise_indices = np.argwhere(_PostProcessingUtility.is_in(image, noise_vals))
-
-        return noise_indices
+        return np.argwhere(_PostProcessingUtility.is_in(image, noise_vals))

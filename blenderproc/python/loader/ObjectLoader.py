@@ -32,11 +32,7 @@ def load_obj(filepath: str, cached_objects: Optional[Dict[str, List[MeshObject]]
 
     if cached_objects is not None and isinstance(cached_objects, dict):
         if filepath in cached_objects.keys():
-            created_obj = []
-            for obj in cached_objects[filepath]:
-                # duplicate the object
-                created_obj.append(obj.duplicate())
-            return created_obj
+            return [obj.duplicate() for obj in cached_objects[filepath]]
         loaded_objects = load_obj(filepath, cached_objects=None, **kwargs)
         cached_objects[filepath] = loaded_objects
         return loaded_objects
@@ -59,7 +55,9 @@ def load_obj(filepath: str, cached_objects: Optional[Dict[str, List[MeshObject]]
         # Check if texture file is given
         if PLY_TEXTURE_FILE_COMMENT in ply_file_content:
             # Find name of texture file
-            texture_file_name = re.search(f"{PLY_TEXTURE_FILE_COMMENT}(.*)\n", ply_file_content).group(1)
+            texture_file_name = re.search(
+                f"{PLY_TEXTURE_FILE_COMMENT}(.*)\n", ply_file_content
+            )[1]
 
             # Determine full texture file path
             texture_file_path = os.path.join(os.path.dirname(filepath), texture_file_name)

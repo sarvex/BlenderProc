@@ -279,7 +279,7 @@ class EntityManipulator(Module):
         set_params = {}
         sel_objs = {}
         for key in self.config.data.keys():
-            if key != 'selector' and key != "mode":
+            if key not in ['selector', "mode"]:
                 # if its not a selector -> to the set parameters dict
                 set_params[key] = self.config.data[key]
             else:
@@ -296,7 +296,7 @@ class EntityManipulator(Module):
             warnings.warn("Warning: No entities are selected. Check Providers conditions.")
             return
         else:
-            print("Amount of objects to modify: {}.".format(len(entities)))
+            print(f"Amount of objects to modify: {len(entities)}.")
 
         # get raw value from the set parameters if it is to be sampled once for all selected entities
         if op_mode == "once_for_all":
@@ -400,7 +400,7 @@ class EntityManipulator(Module):
             else:
                 result = params_conf.get_raw_value(key)
 
-            params.update({key: result})
+            params[key] = result
 
         return params
 
@@ -410,12 +410,11 @@ class EntityManipulator(Module):
         :param entity: An entity to modify. Type: bpy.types.Object
         :param value: Configuration data. Type: dict.
         """
-        if value["name"] == "SOLIDIFY":
-            bpy.context.view_layer.objects.active = entity
-            bpy.ops.object.modifier_add(type=value["name"])
-            bpy.context.object.modifiers["Solidify"].thickness = value["thickness"]
-        else:
-            raise Exception("Unknown modifier: {}.".format(value["name"]))
+        if value["name"] != "SOLIDIFY":
+            raise Exception(f'Unknown modifier: {value["name"]}.')
+        bpy.context.view_layer.objects.active = entity
+        bpy.ops.object.modifier_add(type=value["name"])
+        bpy.context.object.modifiers["Solidify"].thickness = value["thickness"]
 
     def _set_shading(self, entity: bpy.types.Object, value: dict):
         """ Switches shading mode of the selected entity.
@@ -453,20 +452,23 @@ class EntityManipulator(Module):
         :param entity: An object to modify. Type: bpy.types.Object.
         :param value: Configuration data. Type: dict.
         """
-        if hasattr(entity, 'material_slots'):
-            if entity.material_slots:
-                for mat in entity.material_slots:
-                    use_mat = True
-                    if value["obj_materials_cond_to_be_replaced"]:
-                        use_mat = len(Material.perform_and_condition_check(value["obj_materials_cond_to_be_replaced"], [],
-                                                                           [mat.material])) == 1
-                    if use_mat:
-                        if np.random.uniform(0, 1) <= value["randomization_level"]:
-                            mat.material = value["material_to_replace_with"]
-            elif value["add_to_objects_without_material"]:
-                # this object didn't have a material before
-                if np.random.uniform(0, 1) <= value["randomization_level"]:
-                    entity.data.materials.append(value["material_to_replace_with"])
+        if not hasattr(entity, 'material_slots'):
+            return
+        if entity.material_slots:
+            for mat in entity.material_slots:
+                use_mat = True
+                if value["obj_materials_cond_to_be_replaced"]:
+                    use_mat = len(Material.perform_and_condition_check(value["obj_materials_cond_to_be_replaced"], [],
+                                                                       [mat.material])) == 1
+                if (
+                    use_mat
+                    and np.random.uniform(0, 1) <= value["randomization_level"]
+                ):
+                    mat.material = value["material_to_replace_with"]
+        elif value["add_to_objects_without_material"]:
+            # this object didn't have a material before
+            if np.random.uniform(0, 1) <= value["randomization_level"]:
+                entity.data.materials.append(value["material_to_replace_with"])
 
     def _unpack_params(self, param_config: Config, instructions: dict):
         """ Unpacks the data from a config object following the instructions in the dict.
@@ -479,7 +481,9 @@ class EntityManipulator(Module):
         # check what was defined by the user
         for defined_key in param_config.data:
             if defined_key not in instructions:
-                warnings.warn("Warning: key '{}' is not expected. Check spelling/docu for this cf.".format(defined_key))
+                warnings.warn(
+                    f"Warning: key '{defined_key}' is not expected. Check spelling/docu for this cf."
+                )
 
         result = {}
         # for each key and a corresponding instructions
@@ -492,6 +496,6 @@ class EntityManipulator(Module):
                 if result_fct:
                     val = result_fct(val)
 
-                result.update({key: val})
+                result[key] = val
 
         return result

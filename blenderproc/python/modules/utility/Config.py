@@ -31,14 +31,13 @@ class Config:
         if block is None:
             block = self.data
 
-        if "/" in name:
-            delimiter_pos = name.find("/")
-            block_name = name[:delimiter_pos]
-            if block_name in block and type(block[block_name]) is dict:
-                return self.has_param(name[delimiter_pos + 1:], block[block_name])
-        else:
+        if "/" not in name:
             return name in block
-            
+
+        delimiter_pos = name.find("/")
+        block_name = name[:delimiter_pos]
+        if block_name in block and type(block[block_name]) is dict:
+            return self.has_param(name[delimiter_pos + 1:], block[block_name])
         return False
             
     def _get_value(self, name, block=None, allow_invoke_provider=False, global_check=True):
@@ -60,24 +59,20 @@ class Config:
             if block_name in block and type(block[block_name]) is dict:
                 return self._get_value(name[delimiter_pos + 1:], block[block_name], allow_invoke_provider)
             else:
-                raise NotFoundError("No such configuration block '" + block_name + "'!")
-        else:
-            if name in block:
+                raise NotFoundError(f"No such configuration block '{block_name}'!")
+        elif name in block:
 
-                # Check for whether a provider should be invoked
-                if allow_invoke_provider and type(block[name]) is dict:
-                    block[name] = Utility.Utility.build_provider_based_on_config(block[name])
+            # Check for whether a provider should be invoked
+            if allow_invoke_provider and type(block[name]) is dict:
+                block[name] = Utility.Utility.build_provider_based_on_config(block[name])
 
                 # If the parameter is set to a provider object, call the provider to return the parameter value
-                if isinstance(block[name], Provider):
-                    return block[name].run()
-                else:
-                    return block[name]
-            elif global_check and GlobalStorage.has_param(name):
-                # this might also throw an NotFoundError
-                return GlobalStorage.get_global_config()._get_value(name, None, allow_invoke_provider, global_check=False)
-            else:
-                raise NotFoundError("No such configuration '" + name + "'!")
+            return block[name].run() if isinstance(block[name], Provider) else block[name]
+        elif global_check and GlobalStorage.has_param(name):
+            # this might also throw an NotFoundError
+            return GlobalStorage.get_global_config()._get_value(name, None, allow_invoke_provider, global_check=False)
+        else:
+            raise NotFoundError(f"No such configuration '{name}'!")
             
     def _get_value_with_fallback(self, name, fallback=no_fallback, allow_invoke_provider=False):
         """ Returns the value of the given parameter with the given name.
@@ -130,7 +125,7 @@ class Config:
         try:
             return int(value) if value is not None else value
         except ValueError:
-            raise TypeError("Cannot convert '" + str(value) + "' to int!")
+            raise TypeError(f"Cannot convert '{str(value)}' to int!")
 
     def get_bool(self, name, fallback=no_fallback):
         """ Returns the boolean value stored at the given parameter path.
@@ -145,7 +140,7 @@ class Config:
         try:
             return bool(value) if value is not None else value
         except ValueError:
-            raise TypeError("Cannot convert '" + str(value) + "' to bool!")
+            raise TypeError(f"Cannot convert '{str(value)}' to bool!")
 
     def get_float(self, name, fallback=no_fallback):
         """ Returns the float value stored at the given parameter path.
@@ -160,7 +155,7 @@ class Config:
         try:
             return float(value) if value is not None else value
         except ValueError:
-            raise TypeError("Cannot convert '" + str(value) + "' to float!")
+            raise TypeError(f"Cannot convert '{str(value)}' to float!")
 
     def get_string(self, name, fallback=no_fallback):
         """ Returns the string value stored at the given parameter path.
@@ -175,7 +170,7 @@ class Config:
         try:
             return str(value) if value is not None else value
         except ValueError:
-            raise TypeError("Cannot convert '" + str(value) + "' to string!")
+            raise TypeError(f"Cannot convert '{str(value)}' to string!")
 
     def get_list(self, name, fallback=no_fallback):
         """ Returns the list stored at the given parameter path.
@@ -193,7 +188,7 @@ class Config:
                 value = list(value)
 
             if not isinstance(value, list):
-                raise TypeError("Cannot convert '" + str(value) + "' to list!")
+                raise TypeError(f"Cannot convert '{str(value)}' to list!")
 
         return value
 
@@ -211,12 +206,14 @@ class Config:
 
         if value is not None:
             if dimensions is not None and len(value) != dimensions:
-                raise TypeError(str(value) + "' must have exactly " + str(dimensions) + " dimensions!")
+                raise TypeError(
+                    f"{str(value)}' must have exactly {str(dimensions)} dimensions!"
+                )
 
             try:
                 value = mathutils.Vector(value)
             except ValueError:
-                raise TypeError("Cannot convert '" + str(value) + "' to a mathutils.Vector!")
+                raise TypeError(f"Cannot convert '{str(value)}' to a mathutils.Vector!")
 
         return value
 
@@ -266,13 +263,18 @@ class Config:
         value = self.get_raw_value(name, fallback)
 
         if value is not None:
-            if dimensions is not None and (len(value) != dimensions or not all(len(item) == dimensions for item in value)):
-                raise TypeError(str(value) + "' must be exactly " + str(dimensions) + "x" + str(dimensions) + "-dimensional!")
+            if dimensions is not None and (
+                len(value) != dimensions
+                or any(len(item) != dimensions for item in value)
+            ):
+                raise TypeError(
+                    f"{str(value)}' must be exactly {str(dimensions)}x{str(dimensions)}-dimensional!"
+                )
 
             try:
                 value = mathutils.Matrix(value)
             except ValueError:
-                raise TypeError("Cannot convert '" + str(value) + "' to a mathutils matrix!")
+                raise TypeError(f"Cannot convert '{str(value)}' to a mathutils matrix!")
 
         return value
 

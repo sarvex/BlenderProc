@@ -94,11 +94,7 @@ def load_suncg(house_path: str, label_mapping: LabelIdMapping,
             else:
                 transform = None
 
-            if "materials" in node:
-                material_adjustments = node["materials"]
-            else:
-                material_adjustments = []
-
+            material_adjustments = node["materials"] if "materials" in node else []
             # Lookup if the object belongs to a room
             object_id = int(node["id"].split("_")[-1])
             parent = room_per_object.get(object_id, level_obj)
@@ -303,7 +299,7 @@ class _SuncgLoader:
                 obj.clear_all_cps()
         # Go through all imported objects
         for obj in loaded_objects:
-            for key in metadata.keys():
+            for key in metadata:
                 used_key = key
                 if key == "type":
                     used_key = "suncg_type"
@@ -423,11 +419,7 @@ class _SuncgLoader:
             image_path = os.path.join(_SuncgLoader.suncg_dir, "texture", adjustments["texture"])
             image_path = resolve_path(image_path)
 
-            if os.path.exists(image_path + ".png"):
-                image_path += ".png"
-            else:
-                image_path += ".jpg"
-
+            image_path += ".png" if os.path.exists(f"{image_path}.png") else ".jpg"
             image_node = mat.get_the_one_node_with_type("ShaderNodeTexImage")
             if os.path.exists(image_path):
                 image_node.image = bpy.data.images.load(image_path, check_existing=True)

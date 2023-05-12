@@ -33,11 +33,11 @@ room_objs = bproc.loader.load_front3d(
 # define the camera intrinsics
 bproc.camera.set_resolution(512, 512)
 
-# Select the objects, where other objects should be sampled on
-sample_surface_objects = []
-for obj in room_objs:
-    if "table" in obj.get_name().lower() or "desk" in obj.get_name().lower():
-        sample_surface_objects.append(obj)
+sample_surface_objects = [
+    obj
+    for obj in room_objs
+    if "table" in obj.get_name().lower() or "desk" in obj.get_name().lower()
+]
 
 for obj in sample_surface_objects:
     # The loop starts with and UndoAfterExecution in order to clean up the cam poses from the previous iteration and

@@ -44,8 +44,7 @@ def init(clean_up_scene: bool = True):
     # Set default parameters
     _Initializer.set_default_parameters()
 
-    random_seed = os.getenv("BLENDER_PROC_RANDOM_SEED")
-    if random_seed:
+    if random_seed := os.getenv("BLENDER_PROC_RANDOM_SEED"):
         print(f"Got random seed: {random_seed}")
         try:
             random_seed = int(random_seed)

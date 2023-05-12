@@ -79,17 +79,14 @@ class Value(Provider):
         val_type = self.config.get_string("type")
         mode = self.config.get_string("mode", "uniform")
         # sample bool
-        if val_type.lower() == 'bool' or val_type.lower() == 'boolean':
+        if val_type.lower() in ['bool', 'boolean']:
             val = bool(np.random.randint(0, 2))
-        # or sample int
         elif val_type.lower() == 'int':
-            if mode == "uniform":
-                val_min = self.config.get_int('min')
-                val_max = self.config.get_int('max')
-                val = np.random.randint(val_min, val_max)
-            else:
-                raise Exception("Mode {} doesn't exist".format(mode))
-        # or sample float
+            if mode != "uniform":
+                raise Exception(f"Mode {mode} doesn't exist")
+            val_min = self.config.get_int('min')
+            val_max = self.config.get_int('max')
+            val = np.random.randint(val_min, val_max)
         elif val_type.lower() == 'float':
             if mode == "uniform":
                 val_min = self.config.get_float('min')
@@ -100,8 +97,8 @@ class Value(Provider):
                 std_dev = self.config.get_float('std_dev')
                 val = np.random.normal(loc=mean, scale=std_dev)
             else:
-                raise Exception("Mode {} doesn't exist".format(mode))
+                raise Exception(f"Mode {mode} doesn't exist")
         else:
-            raise Exception("Cannot sample this type: " + val_type)
+            raise Exception(f"Cannot sample this type: {val_type}")
 
         return val

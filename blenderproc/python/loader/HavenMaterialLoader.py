@@ -234,10 +234,8 @@ class HavenMaterialLoader:
         principled_bsdf = Utility.get_the_one_node_with_type(nodes, "BsdfPrincipled")
         output_node = Utility.get_the_one_node_with_type(nodes, "OutputMaterial")
 
-        collection_of_texture_nodes = []
         base_color = MaterialLoaderUtility.add_base_color(nodes, links, base_image_path, principled_bsdf)
-        collection_of_texture_nodes.append(base_color)
-
+        collection_of_texture_nodes = [base_color]
         specular_color = MaterialLoaderUtility.add_specular(nodes, links, specular_image_path, principled_bsdf)
         collection_of_texture_nodes.append(specular_color)
 

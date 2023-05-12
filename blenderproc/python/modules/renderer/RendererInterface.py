@@ -135,8 +135,10 @@ class RendererInterface(Module):
         # Set number of cpu cores used for rendering (1 thread is always used for coordination => 1
         # cpu thread means GPU-only rendering)
         RendererUtility.set_cpu_threads(self.config.get_int("cpu_threads", 0))
-        
-        print('Resolution: {}, {}'.format(bpy.context.scene.render.resolution_x, bpy.context.scene.render.resolution_y))
+
+        print(
+            f'Resolution: {bpy.context.scene.render.resolution_x}, {bpy.context.scene.render.resolution_y}'
+        )
 
         RendererUtility.set_denoiser(None if not use_denoiser else self.config.get_string("denoiser", default_denoiser))
 

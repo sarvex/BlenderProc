@@ -23,7 +23,12 @@ class ItemCollection:
         """
         file_format = file_format.split()
         # Calc the total number of arguments necessary per line (used for validating the file)
-        number_of_arguments = sum([self._length_of_parameter(parameter_name, number_of_arguments_per_parameter) for parameter_name in file_format])
+        number_of_arguments = sum(
+            self._length_of_parameter(
+                parameter_name, number_of_arguments_per_parameter
+            )
+            for parameter_name in file_format
+        )
 
         # Read in file and split lines up into arguments
         for arguments in self._collect_arguments_from_file(path, file_format, number_of_arguments):

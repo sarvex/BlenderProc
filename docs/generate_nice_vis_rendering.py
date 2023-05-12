@@ -19,68 +19,66 @@ if __name__ == "__main__":
 
 
     def convert_png_to_multiples(image_path, org_path):
-        if "colors" in image_path:
-            border = args.border
-            normal_path = image_path.replace("colors", "normals")
-            distance_path = image_path.replace("colors", "distance")
-            depth_path = image_path.replace("colors", "depth")
-            seg_path = image_path.replace("colors", "segmap")
-            diffuse_path = image_path.replace("colors", "diffuse")
-            used_imgs = []
-            if os.path.exists(image_path):
-                used_imgs.append(plt.imread(image_path))
-            if os.path.exists(normal_path):
-                used_imgs.append(plt.imread(normal_path))
-            if os.path.exists(distance_path):
-                used_imgs.append(plt.imread(distance_path))
-            if os.path.exists(depth_path):
-                used_imgs.append(plt.imread(depth_path))
-            if os.path.exists(distance_path) and os.path.exists(depth_path):
-                raise Exception("This can only work with one of the two, either distance or depth!")
-            if os.path.exists(seg_path):
-                used_imgs.append(plt.imread(seg_path))
-            if os.path.exists(diffuse_path):
-                used_imgs.append(plt.imread(diffuse_path))
-            if used_imgs:
-                img_size = used_imgs[0].shape
-                if len(used_imgs) == 1:
-                    final_img = np.ones((img_size[0] + border * 2, img_size[1] + border * 2, img_size[2]))
-                elif len(used_imgs) == 2:
-                    final_img = np.ones((img_size[0] * 2 + border * 3, img_size[1] + border * 2, img_size[2]))
-                else:
-                    final_img = np.ones((img_size[0] * 2 + border * 3, img_size[1] * 2 + border * 3, img_size[2]))
-
-                final_img[border:img_size[0]+border, border:img_size[1]+border, :] = used_imgs[0]
-
-                if len(used_imgs) == 2:
-                    final_img[2 * border + img_size[0]:-border, border:border + img_size[1], :] = used_imgs[1]
-                if len(used_imgs) == 3:
-                    start_val = int((img_size[1] + border + border * 0.5) * 0.5)
-                    final_img[border:img_size[0] + border, 2 * border + img_size[1]:-border, :] = used_imgs[1]
-                    final_img[2 * border + img_size[0]:-border, start_val:start_val + img_size[1], :] = used_imgs[2]
-                if len(used_imgs) == 4:
-                    final_img[2 * border + img_size[0]:-border, border:border + img_size[1], :] = used_imgs[1]
-                    final_img[border:img_size[0] + border, 2 * border + img_size[1]:-border, :] = used_imgs[2]
-                    final_img[2 * border + img_size[0]:-border, 2 * border + img_size[1]:-border, :] = used_imgs[3]
-
-            if ".png" in org_path:
-                resulting_file_name = org_path.replace("colors", "rendering")
+        if "colors" not in image_path:
+            raise Exception(f"The file path must point to the colors image: {image_path}")
+        border = args.border
+        normal_path = image_path.replace("colors", "normals")
+        distance_path = image_path.replace("colors", "distance")
+        depth_path = image_path.replace("colors", "depth")
+        seg_path = image_path.replace("colors", "segmap")
+        diffuse_path = image_path.replace("colors", "diffuse")
+        used_imgs = []
+        if os.path.exists(image_path):
+            used_imgs.append(plt.imread(image_path))
+        if os.path.exists(normal_path):
+            used_imgs.append(plt.imread(normal_path))
+        if os.path.exists(distance_path):
+            used_imgs.append(plt.imread(distance_path))
+        if os.path.exists(depth_path):
+            used_imgs.append(plt.imread(depth_path))
+        if os.path.exists(distance_path) and os.path.exists(depth_path):
+            raise Exception("This can only work with one of the two, either distance or depth!")
+        if os.path.exists(seg_path):
+            used_imgs.append(plt.imread(seg_path))
+        if os.path.exists(diffuse_path):
+            used_imgs.append(plt.imread(diffuse_path))
+        if used_imgs:
+            img_size = used_imgs[0].shape
+            if len(used_imgs) == 1:
+                final_img = np.ones((img_size[0] + border * 2, img_size[1] + border * 2, img_size[2]))
+            elif len(used_imgs) == 2:
+                final_img = np.ones((img_size[0] * 2 + border * 3, img_size[1] + border * 2, img_size[2]))
             else:
-                if final_img.shape[2] == 3:
-                    resulting_file_name = org_path.replace(".hdf5", "_rendering.jpg")
-                elif final_img.shape[2] == 4:
-                    if abs(np.min(final_img) - 1) < 1e-7:
-                        final_img = final_img[:,:,:3]
-                        resulting_file_name = org_path.replace(".hdf5", "_rendering.jpg")
-                    else:
-                        resulting_file_name = org_path.replace(".hdf5", "_rendering.png")
-            if args.output:
-                resulting_file_name = os.path.join(args.output, resulting_file_name)
-            print("Saved in {}".format(resulting_file_name))
-            plt.imsave(resulting_file_name, final_img)
-            plt.close()
-        else:
-            raise Exception("The file path must point to the colors image: {}".format(image_path))
+                final_img = np.ones((img_size[0] * 2 + border * 3, img_size[1] * 2 + border * 3, img_size[2]))
+
+            final_img[border:img_size[0]+border, border:img_size[1]+border, :] = used_imgs[0]
+
+            if len(used_imgs) == 2:
+                final_img[2 * border + img_size[0]:-border, border:border + img_size[1], :] = used_imgs[1]
+            if len(used_imgs) == 3:
+                start_val = int((img_size[1] + border + border * 0.5) * 0.5)
+                final_img[border:img_size[0] + border, 2 * border + img_size[1]:-border, :] = used_imgs[1]
+                final_img[2 * border + img_size[0]:-border, start_val:start_val + img_size[1], :] = used_imgs[2]
+            if len(used_imgs) == 4:
+                final_img[2 * border + img_size[0]:-border, border:border + img_size[1], :] = used_imgs[1]
+                final_img[border:img_size[0] + border, 2 * border + img_size[1]:-border, :] = used_imgs[2]
+                final_img[2 * border + img_size[0]:-border, 2 * border + img_size[1]:-border, :] = used_imgs[3]
+
+        if ".png" in org_path:
+            resulting_file_name = org_path.replace("colors", "rendering")
+        elif final_img.shape[2] == 3:
+            resulting_file_name = org_path.replace(".hdf5", "_rendering.jpg")
+        elif final_img.shape[2] == 4:
+            if abs(np.min(final_img) - 1) < 1e-7:
+                final_img = final_img[:,:,:3]
+                resulting_file_name = org_path.replace(".hdf5", "_rendering.jpg")
+            else:
+                resulting_file_name = org_path.replace(".hdf5", "_rendering.png")
+        if args.output:
+            resulting_file_name = os.path.join(args.output, resulting_file_name)
+        print(f"Saved in {resulting_file_name}")
+        plt.imsave(resulting_file_name, final_img)
+        plt.close()
 
     if isinstance(args.file_path, str):
         file_paths = [args.file_path]

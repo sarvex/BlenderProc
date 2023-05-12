@@ -120,10 +120,10 @@ class WorldManipulator(Module):
                     else:
                         raise Exception("The category id of the world can only be int!")
                 else:
-                    raise RuntimeError('Unknown cf_ parameter: ' + key)
+                    raise RuntimeError(f'Unknown cf_ parameter: {key}')
 
             else:
-                raise RuntimeError('Unknown parameter: ' + key)
+                raise RuntimeError(f'Unknown parameter: {key}')
 
     def _set_bg_surface_color(self, world, color):
         """ Sets the color of the emitted light by the background surface.

@@ -35,7 +35,7 @@ mapping_coords = bproc.camera.set_lens_distortion(k1, k2, k3, p1, p2)
 # Find point of interest, all cam poses should look towards it
 poi = bproc.object.compute_poi(objs)
 # Sample five camera poses
-for i in range(2):
+for _ in range(2):
     # Sample random camera location above objects
     location = np.random.uniform([-10, -10, 12], [10, 10, 8])
     # Compute rotation based on vector going from location towards poi

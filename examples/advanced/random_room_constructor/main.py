@@ -13,7 +13,7 @@ bproc.init()
 # Load materials and objects that can be placed into the room
 materials = bproc.loader.load_ccmaterials(args.cc_material_path, ["Bricks", "Wood", "Carpet", "Tile", "Marble"])
 interior_objects = []
-for i in range(15):
+for _ in range(15):
     interior_objects.extend(bproc.loader.load_ikea(args.ikea_path, ["bed", "chair", "desk", "bookshelf"]))
 
 # Construct random room and fill with interior_objects

@@ -73,17 +73,15 @@ class _SuncgLighting:
                     m = m.duplicate()
                     obj.set_material(i, m)
                 # rename the material
-                m.set_name(m.get_name() + "_emission")
+                m.set_name(f"{m.get_name()}_emission")
 
                 emission = m.get_nodes_with_type("Emission")
                 if not emission:
-                    if mat_name in light[0]:
-                        # If the material corresponds to light bulb
-                        emission_strength = lightbulb_emission_strength
-                    else:
-                        # If the material corresponds to a lampshade
-                        emission_strength = lampshade_emission_strength
-
+                    emission_strength = (
+                        lightbulb_emission_strength
+                        if mat_name in light[0]
+                        else lampshade_emission_strength
+                    )
                     m.make_emissive(emission_strength, emission_color=m.blender_obj.diffuse_color)
                     collection_of_mats["lamp"][old_mat_name] = m
 
@@ -117,7 +115,7 @@ class _SuncgLighting:
                     m = m.duplicate()
                     obj.set_material(i, m)
                 # rename the material
-                m.set_name(m.get_name() + "_emission")
+                m.set_name(f"{m.get_name()}_emission")
                 if not m.get_nodes_with_type('Emission'):
                     transparent_node = m.new_node('ShaderNodeBsdfDiffuse')
                     transparent_node.inputs['Color'].default_value[:3] = (0.285, 0.5, 0.48)
@@ -149,7 +147,7 @@ class _SuncgLighting:
                 material = material.duplicate()
                 obj.set_material(i, material)
             # rename the material
-            material.set_name(material.get_name() + "_emission")
+            material.set_name(f"{material.get_name()}_emission")
 
             if not material.get_nodes_with_type("Emission") and material.get_nodes_with_type("BsdfPrincipled"):
                 material.make_emissive(emission_strength=ceiling_emission_strength, emission_color=[1, 1, 1, 1])

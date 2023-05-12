@@ -38,7 +38,6 @@ def main():
                         help="Output directory. Default: 'output'.")
     args = parser.parse_args()
 
-    # Create an output directory if `overwrite` is not selected
     if not args.overwrite:
         if args.output == "output":
             os.makedirs(os.path.join(args.images, "output"), exist_ok=True)
@@ -66,13 +65,11 @@ def main():
             # Overwrites original image with merged one if `overwrite` is selected
             if args.overwrite:
                 background.save(img_path)
-            # Else store merged image in default or provided `output` directory
+            elif args.output == "output":
+                background.save(
+                    os.path.join(args.images, "output", file_name))
             else:
-                if args.output == "output":
-                    background.save(
-                        os.path.join(args.images, "output", file_name))
-                else:
-                    background.save(args.output)
+                background.save(args.output)
 
 
 if __name__ == "__main__":

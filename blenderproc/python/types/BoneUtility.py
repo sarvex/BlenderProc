@@ -13,11 +13,15 @@ def get_armature_from_bone(bone_name: str) -> Optional[MeshObject]:
     :param bone_name: Name of the bone.
     :return: The respective armature.
     """
-    for obj in bpy.data.objects:
-        if obj.type == "ARMATURE":
-            if obj.pose.bones.get(bone_name) is not None:
-                return obj
-    return None
+    return next(
+        (
+            obj
+            for obj in bpy.data.objects
+            if obj.type == "ARMATURE"
+            and obj.pose.bones.get(bone_name) is not None
+        ),
+        None,
+    )
 
 
 def add_constraint_if_not_existing(bone: bpy.types.PoseBone, constraint_name: str = "",

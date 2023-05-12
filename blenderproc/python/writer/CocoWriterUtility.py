@@ -66,7 +66,7 @@ def write_coco_annotations(output_dir: str, instance_segmaps: Optional[List[np.n
     if instance_attribute_maps is None:
         instance_attribute_maps = []
 
-    if len(colors) > 0 and len(colors[0].shape) == 4:
+    if colors and len(colors[0].shape) == 4:
         raise ValueError("BlenderProc currently does not support writing coco annotations for stereo images. "
                          "However, you can enter left and right images / segmaps separately.")
 
@@ -119,8 +119,7 @@ def write_coco_annotations(output_dir: str, instance_segmaps: Optional[List[np.n
             segcolormap = []
             with open(segcolormap_output["path"] % frame, 'r', encoding="utf-8") as csvfile:
                 reader = csv.DictReader(csvfile)
-                for mapping in reader:
-                    segcolormap.append(mapping)
+                segcolormap.extend(iter(reader))
             segcolormaps.append(segcolormap)
 
         if not instance_segmaps:
@@ -136,14 +135,14 @@ def write_coco_annotations(output_dir: str, instance_segmaps: Optional[List[np.n
             color_bgr = color_rgb.copy()
             color_bgr[..., :3] = color_bgr[..., :3][..., ::-1]
 
-            if color_file_format == 'PNG':
-                target_base_path = f'images/{file_prefix}{frame + image_offset:06d}.png'
-                target_path = os.path.join(output_dir, target_base_path)
-                cv2.imwrite(target_path, color_bgr)
-            elif color_file_format == 'JPEG':
+            if color_file_format == 'JPEG':
                 target_base_path = f'images/{file_prefix}{frame + image_offset:06d}.jpg'
                 target_path = os.path.join(output_dir, target_base_path)
                 cv2.imwrite(target_path, color_bgr, [int(cv2.IMWRITE_JPEG_QUALITY), jpg_quality])
+            elif color_file_format == 'PNG':
+                target_base_path = f'images/{file_prefix}{frame + image_offset:06d}.png'
+                target_path = os.path.join(output_dir, target_base_path)
+                cv2.imwrite(target_path, color_bgr)
             else:
                 raise RuntimeError(f'Unknown color_file_format={color_file_format}. Try "PNG" or "JPEG"')
 
@@ -167,7 +166,7 @@ def write_coco_annotations(output_dir: str, instance_segmaps: Optional[List[np.n
                                                                existing_coco_annotations,
                                                                label_mapping)
 
-    print("Writing coco annotations to " + coco_annotations_path)
+    print(f"Writing coco annotations to {coco_annotations_path}")
     with open(coco_annotations_path, 'w', encoding="utf-8") as fp:
         json.dump(coco_output, fp, indent=indent)
 
@@ -202,9 +201,7 @@ def rle_to_binary_mask(rle: Dict[str, List[int]]) -> np.ndarray:
         end = start + counts[i + 1]
         binary_array[start:end] = (i + 1) % 2
 
-    binary_mask = binary_array.reshape(*rle.get('size'), order='F')
-
-    return binary_mask
+    return binary_array.reshape(*rle.get('size'), order='F')
 
 
 class _CocoWriterUtility:
@@ -391,12 +388,12 @@ class _CocoWriterUtility:
 
         bounding_box = _CocoWriterUtility.bbox_from_binary_mask(binary_mask)
 
-        if mask_encoding_format == 'rle':
-            segmentation = binary_mask_to_rle(binary_mask)
-        elif mask_encoding_format == 'polygon':
+        if mask_encoding_format == 'polygon':
             segmentation = _CocoWriterUtility.binary_mask_to_polygon(binary_mask, tolerance)
             if not segmentation:
                 return None
+        elif mask_encoding_format == 'rle':
+            segmentation = binary_mask_to_rle(binary_mask)
         else:
             raise RuntimeError(f"Unknown encoding format: {mask_encoding_format}")
 

@@ -92,11 +92,8 @@ def add_cube_based_on_bb(bouding_box: List[Vector], name: str = 'NewCube') -> bp
     # link object in collection
     col.objects.link(obj)
 
-    # convert vertices to mesh
-    new_vertices = []
     bm = bmesh.new()
-    for v in bouding_box:
-        new_vertices.append(bm.verts.new(v))
+    new_vertices = [bm.verts.new(v) for v in bouding_box]
     # create all 6 surfaces, the ordering is depending on the ordering of the vertices in the bounding box
     bm.faces.new([new_vertices[0], new_vertices[1], new_vertices[2], new_vertices[3]])
     bm.faces.new([new_vertices[0], new_vertices[4], new_vertices[5], new_vertices[1]])
@@ -187,7 +184,7 @@ def load_image(file_path: str, num_channels: int = 3) -> np.ndarray:
         img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
         return img
     else:
-        raise NotImplementedError("File with ending " + file_ending + " cannot be loaded.")
+        raise NotImplementedError(f"File with ending {file_ending} cannot be loaded.")
 
 
 def collect_all_orphan_data_blocks() -> Dict[str, Any]:
@@ -236,13 +233,12 @@ def get_node_attributes(node: bpy.types.Node) -> List[str]:
     ignore_attributes = ("rna_type", "type", "dimensions", "inputs", "outputs", "internal_links", "select",
                          "texture_mapping", "color_mapping", "image_user", "interface")
 
-    attributes = []
-    for attr in node.bl_rna.properties:
-        # check if the attribute should be copied and add it to the list of attributes to copy
-        if not attr.identifier in ignore_attributes and not attr.identifier.split("_")[0] == "bl":
-            attributes.append(attr.identifier)
-
-    return attributes
+    return [
+        attr.identifier
+        for attr in node.bl_rna.properties
+        if attr.identifier not in ignore_attributes
+        and attr.identifier.split("_")[0] != "bl"
+    ]
 
 
 def copy_nodes(nodes: bpy.types.Nodes, goal_nodes: bpy.types.Nodes):

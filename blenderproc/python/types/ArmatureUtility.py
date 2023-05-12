@@ -33,7 +33,7 @@ class Armature(Entity):
                      the constraints. For relative, we don't - this will result in inverse motion after the
                      constraint's limits have been reached.
         """
-        assert mode in ["absolute", "relative"]
+        assert mode in {"absolute", "relative"}
         bpy.ops.object.select_all(action='DESELECT')
         bone = self.blender_obj.pose.bones.get('Bone')
         bone.bone.select = True
@@ -48,14 +48,12 @@ class Armature(Entity):
                 current_rotation_euler = bone.rotation_euler
                 current_rotation_euler[["X", "Y", "Z"].index(axis)] = rotation_euler
                 bone.rotation_euler = current_rotation_euler
-                print(f"Set rotation_euler of armature {self.get_name()} to {rotation_euler}")
             else:
                 bone.rotation_euler = Vector([self._clip_value_from_constraint(value=rot_euler,
                                                                                constraint_name="Limit Rotation",
                                                                                axis=axis)
                                               for rot_euler, axis in zip(rotation_euler, ["X", "Y", "Z"])])
-                print(f"Set rotation_euler of armature {self.get_name()} to {rotation_euler}")
-        # in relative mode we add the rotation to the current value
+            print(f"Set rotation_euler of armature {self.get_name()} to {rotation_euler}")
         elif mode == "relative":
             if isinstance(rotation_euler, float):
                 axis = self._determine_rotation_axis()

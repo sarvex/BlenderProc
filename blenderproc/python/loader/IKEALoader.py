@@ -75,7 +75,7 @@ def load_ikea(data_dir: str = 'resources/IKEA', obj_categories: Optional[Union[L
     # extract the file unit from the .obj file to convert every object to meters
     file_unit = ""
     with open(selected_obj, "r", encoding="utf-8") as file:
-        first_lines = [next(file) for x in range(5)]
+        first_lines = [next(file) for _ in range(5)]
         for line in first_lines:
             if "File units" in line:
                 file_unit = line.strip().split(" ")[-1]
@@ -150,10 +150,7 @@ class _IKEALoader:
         print(f'Found {counter} object files in dataset belonging to {len(obj_dict)} categories')
         if not obj_dict:
             raise RuntimeError("No obj file was found, check if the correct folder is provided!")
-        # to avoid randomness while accessing the dict
-        obj_dict = OrderedDict(obj_dict)
-
-        return obj_dict
+        return OrderedDict(obj_dict)
 
     @staticmethod
     def check_material_file(path: str) -> bool:
@@ -165,7 +162,7 @@ class _IKEALoader:
         """
         name = os.path.basename(path).split(".")[0]
         obj_dir = os.path.dirname(path)
-        mtl_path = os.path.join(obj_dir, name + ".mtl")
+        mtl_path = os.path.join(obj_dir, f"{name}.mtl")
         return os.path.exists(mtl_path)
 
     @staticmethod

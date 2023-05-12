@@ -63,7 +63,7 @@ def convex_decomposition(obj: "MeshObject", temp_dir: str, vhacd_path: str, reso
     # Download v-hacd library if necessary
     if not os.path.exists(os.path.join(vhacd_path, "v-hacd")):
         os.makedirs(vhacd_path, exist_ok=True)
-        print("Downloading v-hacd library into " + str(vhacd_path))
+        print(f"Downloading v-hacd library into {vhacd_path}")
         git.Git(vhacd_path).clone("https://github.com/kmammou/v-hacd.git")
 
         print("Building v-hacd")
@@ -87,13 +87,13 @@ def convex_decomposition(obj: "MeshObject", temp_dir: str, vhacd_path: str, reso
     # Apply transforms
     translation, quaternion, scale = Matrix(obj.get_local2world_mat()).decompose()
     scale_matrix = Matrix(((scale.x, 0, 0, 0), (0, scale.y, 0, 0), (0, 0, scale.z, 0), (0, 0, 0, 1)))
-    if apply_transforms in ["S", "RS", "LRS"]:
+    if apply_transforms in {"S", "RS", "LRS"}:
         pre_matrix = scale_matrix
         post_matrix = Matrix()
     else:
         pre_matrix = Matrix()
         post_matrix = scale_matrix
-    if apply_transforms in ["RS", "LRS"]:
+    if apply_transforms in {"RS", "LRS"}:
         pre_matrix = quaternion.to_matrix().to_4x4() @ pre_matrix
     else:
         post_matrix = quaternion.to_matrix().to_4x4() @ post_matrix
@@ -120,7 +120,9 @@ def convex_decomposition(obj: "MeshObject", temp_dir: str, vhacd_path: str, reso
         mesh_hash = hash((mesh_hash, hash(vert.co[:])))
     mesh_hash = abs(mesh_hash)
 
-    if cache_dir is None or not os.path.exists(os.path.join(cache_dir, str(mesh_hash) + ".obj")):
+    if cache_dir is None or not os.path.exists(
+        os.path.join(cache_dir, f"{str(mesh_hash)}.obj")
+    ):
         vhacd_binary = os.path.join(vhacd_path, "v-hacd", "app", "TestVHACD")
         if not os.path.exists(vhacd_binary):
             raise FileNotFoundError("The vhacd binary was not found, the build script probably failed!")
@@ -146,9 +148,11 @@ def convex_decomposition(obj: "MeshObject", temp_dir: str, vhacd_path: str, reso
             if not os.path.exists(cache_dir):
                 os.makedirs(cache_dir, exist_ok=True)
             # Copy decomposition into cache dir
-            shutil.copyfile(out_file_name, os.path.join(cache_dir, str(mesh_hash) + ".obj"))
+            shutil.copyfile(
+                out_file_name, os.path.join(cache_dir, f"{str(mesh_hash)}.obj")
+            )
     else:
-        out_file_name = os.path.join(cache_dir, str(mesh_hash) + ".obj")
+        out_file_name = os.path.join(cache_dir, f"{str(mesh_hash)}.obj")
 
     bpy.ops.import_scene.obj(filepath=out_file_name, axis_forward="Y", axis_up="Z")
     imported = bpy.context.selected_objects

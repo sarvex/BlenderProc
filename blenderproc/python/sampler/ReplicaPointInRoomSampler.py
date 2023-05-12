@@ -54,9 +54,7 @@ class ReplicaPointInRoomSampler:
                     # Check if sampled pose is above the floor to make sure it is really inside the room
                     if floor_object.position_is_above_object(point):
                         return point
-            else:
-                # Check if sampled pose is above the floor to make sure it is really inside the room
-                if self.floor_object.position_is_above_object(point):
-                    return point
+            elif self.floor_object.position_is_above_object(point):
+                return point
 
         raise Exception("Cannot sample any point inside the loaded replica rooms.")
